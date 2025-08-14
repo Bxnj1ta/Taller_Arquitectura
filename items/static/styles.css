@@ -1,0 +1,49 @@
+body{ 
+    font-family: Inter, Arial, sans-serif; 
+    background:#f6f7fb; 
+    color:#222 
+}
+.container{ 
+    max-width:760px; 
+    margin:40px auto; 
+    background:#fff; 
+    padding:24px; 
+    border-radius:8px; 
+    box-shadow:0 6px 18px rgba(0,0,0,.06)
+}
+h1{ 
+    margin-top:0
+}
+.item{ 
+    padding:12px; 
+    border-bottom:1px solid #eee 
+}
+.item h3{ 
+    margin:0 
+}
+.actions{ 
+    margin-top:8px 
+}
+button{ 
+    margin-right:8px 
+}
+.btn{ 
+    display:inline-block; 
+    padding:8px 12px; 
+    background:#2b6cb0; 
+    color:#fff; 
+    border-radius:6px; 
+    text-decoration:none 
+}
+form label{ 
+    display:block; 
+    margin-top:8px 
+}
+form input, form textarea{ 
+    width:100%; 
+    padding:8px; 
+    box-sizing:border-box 
+}
+.form-actions{ 
+    margin-top:12px 
+}

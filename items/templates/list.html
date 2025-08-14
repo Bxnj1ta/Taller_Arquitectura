@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <title>Items - List</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    </head>
+    <body>
+    <div class="container">
+        <h1>Items (CRUD - SOA)</h1>
+        <a href="/form/" class="btn">Nuevo item</a>
+        <div id="items"></div>
+    </div>
+
+        <script>
+            async function fetchItems(){
+            const res = await fetch('/api/items/');
+            const data = await res.json();
+            const el = document.getElementById('items');
+            el.innerHTML = '';
+            data.items.forEach(it => {
+                const node = document.createElement('div');
+                node.className = 'item';
+                node.innerHTML = `\
+                <h3>${it.name}</h3>\
+                <p>${it.description}</p>\
+                <div class='actions'>\
+                    <button onclick="edit(${it.id})">Editar</button>\
+                    <button onclick="del(${it.id})">Borrar</button>\
+                </div>`;
+                el.appendChild(node);
+            });
+            }
+
+            function edit(id){
+            window.location.href = `/form/?edit=${id}`;
+            }
+
+            async function del(id){
+            if(!confirm('¿Eliminar item?')) return;
+            const res = await fetch(`/api/items/${id}/`, { method: 'DELETE' });
+            if(res.ok) fetchItems();
+            }
+
+            fetchItems();
+        </script>
+    </body>
+</html>
