@@ -1,49 +1,196 @@
-body{ 
-    font-family: Inter, Arial, sans-serif; 
-    background:#f6f7fb; 
-    color:#222 
+body {
+    font-family: Inter, Arial, sans-serif;
+    background: #2da3ca;
+    color: #222;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;   /* Para centrar vertical */
 }
-.container{ 
-    max-width:760px; 
-    margin:40px auto; 
-    background:#fff; 
-    padding:24px; 
-    border-radius:8px; 
-    box-shadow:0 6px 18px rgba(0,0,0,.06)
+
+/* Caja principal */
+.container {
+    max-width: 420px;        
+    width: 100%;
+    background: #fff;
+    padding: 32px 28px;
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    justify-content: center; /* centro horizontal */
+    align-items: center;     /* centro vertical */
+    text-align: center;
+    transition: 0.3s;
 }
-h1{ 
-    margin-top:0
+
+/* Encabezados */
+h1, h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: 600;
 }
-.item{ 
-    padding:12px; 
-    border-bottom:1px solid #eee 
+
+/* Inputs */
+form label {
+    display: block;
+    margin-top: 12px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
 }
-.item h3{ 
-    margin:0 
+
+form input, form textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f9f9f9;
+    transition: 0.3s;
+    box-sizing: border-box;
 }
-.actions{ 
-    margin-top:8px 
+
+form input:focus, form textarea:focus {
+    border-color: #4e54c8;
+    background: #fff;
+    box-shadow: 0 0 6px rgba(78, 84, 200, 0.2);
+    outline: none;
 }
-button{ 
-    margin-right:8px 
+
+/* Botones */
+button, .btn {
+    display: inline-block;
+    padding: 12px;
+    border: none;
+    border-radius: 30px;  /* Botón redondeado tipo neumorfismo */
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 20px;
+    transition: all 0.3s;
+    width: 100%;
 }
-.btn{ 
-    display:inline-block; 
-    padding:8px 12px; 
-    background:#2b6cb0; 
-    color:#fff; 
-    border-radius:6px; 
-    text-decoration:none 
+
+.btn {
+    background: #4e54c8;
+    color: #fff;
+    text-decoration: none;
+    text-align: center;
 }
-form label{ 
-    display:block; 
-    margin-top:8px 
+
+.btn:hover {
+    background: #3b40a4;
+    transform: translateY(-2px);
 }
-form input, form textarea{ 
-    width:100%; 
-    padding:8px; 
-    box-sizing:border-box 
+
+/* Lista de items */
+.item {
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 12px;
+    background: #fafafa;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
 }
-.form-actions{ 
-    margin-top:12px 
+
+.item h3 {
+    margin: 0 0 6px 0;
+}
+
+.actions {
+    margin-top: 8px;
+}
+
+.actions button {
+    width: auto;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-right: 8px;
+    background: #2b6cb0;
+    color: #fff;
+    font-size: 14px;
+}
+
+.actions button:hover {
+    background: #234e85;
+}
+
+/* Alertas */
+.alert {
+    background: #ffe5e5;
+    color: #a00;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+/* Login específico */
+.login-box {
+    max-width: 400px;
+    padding: 36px 28px;
+    border-radius: 20px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+    background: #fff;
+    text-align: center;
+}
+
+.login-box h2 {
+    margin-bottom: 24px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+}
+
+.login-box form {
+    text-align: left;
+}
+
+.login-box label {
+    display: block;
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 14px;
+    background: #f9f9f9;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+.login-box input:focus {
+    border-color: #4e54c8;
+    background: #fff;
+    box-shadow: 0 0 6px rgba(78, 84, 200, 0.25);
+    outline: none;
+}
+
+.login-box button {
+    margin-top: 24px;
+    padding: 14px;
+    border: none;
+    border-radius: 30px;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 600;
+    background: #4e54c8;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.login-box button:hover {
+    background: #3b40a4;
+    transform: translateY(-2px);
 }

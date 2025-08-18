@@ -81,7 +81,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'soa_crud_db',
         'USER': 'postgres',
-        'PASSWORD': 'Contraseña_postgres',
+        'PASSWORD': 'coloquen aca su contraseña de postgresql',
         'HOST': 'localhost',
         'PORT': '5432',
     }
