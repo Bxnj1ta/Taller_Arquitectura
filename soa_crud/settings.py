@@ -9,8 +9,12 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import boto3
 from pathlib import Path
+# main.py
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import StreamingResponse
+import io
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "items",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -72,6 +77,63 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "soa_crud.wsgi.application"
 
+# Credenciales AWS
+AWS_ACCESS_KEY_ID = "AKIASDHZAEOPQQF53BHO"
+AWS_SECRET_ACCESS_KEY = "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"
+AWS_STORAGE_BUCKET_NAME = "bucket-arquitectura-software"
+AWS_S3_REGION_NAME = "us-east-2"  
+AWS_QUERYSTRING_AUTH = False  
+
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_S3_REGION_NAME,
+)
+
+app = FastAPI()
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        s3_client.upload_fileobj(
+            file.file,
+            AWS_STORAGE_BUCKET_NAME,
+            file.filename,
+            ExtraArgs={"ContentType": file.content_type}
+        )
+        url = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file.filename}"
+        return {"message": "Archivo subido con éxito", "url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    try:
+        file_stream = io.BytesIO()
+        s3_client.download_fileobj(AWS_STORAGE_BUCKET_NAME, filename, file_stream)
+        file_stream.seek(0)  # Reinicia el puntero para leer desde el inicio
+        return StreamingResponse(
+            file_stream,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+                                           
+# URL base de los archivos
+AWS_S3_CUSTOM_DOMAIN = f"https://bucket-arquitectura-software.s3.amazonaws.com"
+
+# Configurar almacenamiento de archivos estáticos y media
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+# Para servir media
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+
+#https://144403604383.signin.aws.amazon.com/console/console
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -81,7 +143,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'soa_crud_db',
         'USER': 'postgres',
-        'PASSWORD': 'coloquen aca su contraseña de postgresql',
+        'PASSWORD': 'Bxnj1ta',
         'HOST': 'localhost',
         'PORT': '5432',
     }
