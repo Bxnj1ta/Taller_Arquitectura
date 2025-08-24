@@ -1,34 +1,37 @@
 # Andres Toledo, Benjamin González, Daniel Reyes y Sebastian Urrego
 
-# 🌐  Tarea aquitectura de software - CRUD e inicio sesión con "admin"
+# 🌐  Tarea arquitectura de software - CRUD e inicio sesión con "admin"
 
 Proyecto de ejemplo en **Django** para la gestión de ítems mediante un **CRUD (Create, Read, Update, Delete)**.  
-Incluye autenticación de usuario, vistas con formularios y una API REST para interactuar con los datos.
+Incluye autenticación de usuario, vistas con formularios y una API REST para interactuar con los datos.  
+Se integran servicios en **AWS** (S3 y Lambda) y un microservicio en **FastAPI**.
 
 ---
 
 ## 🚀 Características
-✅ Autenticación de usuario con login.
-✅ Listado de ítems dinámico con JavaScript (fetch API).
-✅ Operaciones CRUD (crear, leer, editar, eliminar).
-✅ API REST construida con Django REST Framework.
-✅ Estilo moderno y responsive en las vistas (HTML + CSS).
-✅ AWS S3 como almacenamiento de archivos estáticos y multimedia.
-✅ AWS Lambda para procesamiento automático de archivos.
-✅ FastAPI como microservicio auxiliar para endpoints ligeros.
+✅ Autenticación de usuario con login.  
+✅ Listado de ítems dinámico con JavaScript (fetch API).  
+✅ Operaciones CRUD (crear, leer, editar, eliminar).  
+✅ API REST construida con Django REST Framework.  
+✅ Estilo moderno y responsive en las vistas (HTML + CSS).  
+✅ AWS S3 como almacenamiento de archivos estáticos y multimedia.  
+✅ AWS Lambda para procesamiento automático de archivos.  
+✅ FastAPI como microservicio auxiliar para endpoints ligeros.  
 
 ---
 
 ## 📂 Estructura del proyecto
+
 ```
 SOA_CRUD/
-│── items/         # App principal con modelos, vistas y API
-│── soa_crud/      # Configuración global de Django (urls, settings, wsgi, asgi)
-│── db.sqlite3     # Base de datos SQLite (puede ser reemplazada por PostgreSQL/MySQL)
-│── manage.py      # Script principal de Django para ejecutar el proyecto
+│── items/ # App principal con modelos, vistas y API
+│── soa_crud/ # Configuración global de Django (urls, settings, wsgi asgi)
+│── fastapi_service/ # Microservicio con FastAPI
+│── db.sqlite3 # Base de datos SQLite (puede ser reemplazada por PostgreSQL/MySQL)
+│── manage.py # Script principal de Django para ejecutar el proyecto
 │── requirements.txt # Dependencias del proyecto
+│── .env # Variables de entorno (NO se sube a GitHub)
 ```
-
 ---
 
 ## ⚙️ Instalación y ejecución
@@ -37,8 +40,8 @@ SOA_CRUD/
 ```bash
 git clone https://github.com/tu_usuario/soa_crud.git
 cd soa_crud
-```
 
+```
 ### 2️⃣ Crear entorno virtual
 ```bash
 python -m venv soa_crud_env
@@ -73,9 +76,18 @@ python manage.py createsuperuser
 ```bash
 python manage.py runserver
 ```
-
 Acceder en navegador:  
 👉 `http://127.0.0.1:8000/login/`
+
+
+### 7 Ejecutar el fastapi
+```bash
+uvicorn fastapi_service.main:app --reload --port 8001
+
+```
+
+Acceder en navegador:  
+👉 `http://127.0.0.1:8001/docs`
 
 ---
 
