@@ -8,11 +8,14 @@ Incluye autenticación de usuario, vistas con formularios y una API REST para in
 ---
 
 ## 🚀 Características
-- ✅ Autenticación de usuario con login.
-- ✅ Listado de ítems dinámico con **JavaScript (fetch API)**.
-- ✅ Operaciones CRUD (crear, leer, editar, eliminar).
-- ✅ API REST construida con **Django REST Framework**.
-- ✅ Estilo moderno y responsive en las vistas (HTML + CSS).
+✅ Autenticación de usuario con login.
+✅ Listado de ítems dinámico con JavaScript (fetch API).
+✅ Operaciones CRUD (crear, leer, editar, eliminar).
+✅ API REST construida con Django REST Framework.
+✅ Estilo moderno y responsive en las vistas (HTML + CSS).
+✅ AWS S3 como almacenamiento de archivos estáticos y multimedia.
+✅ AWS Lambda para procesamiento automático de archivos.
+✅ FastAPI como microservicio auxiliar para endpoints ligeros.
 
 ---
 
@@ -102,5 +105,7 @@ Vista con botones de **Editar** y **Borrar**, cargada dinámicamente con JavaScr
 - [Django REST Framework](https://www.django-rest-framework.org/) (API)
 - HTML, CSS, JavaScript (frontend)
 - SQLite (base de datos por defecto)
-
+- FastAPI (microservicio)
+- AWS S3 (almacenamiento de archivos)
+- AWS Lambda (serverless functions)
 ---
