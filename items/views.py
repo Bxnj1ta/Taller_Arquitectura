@@ -1,12 +1,9 @@
 from django.shortcuts import render, redirect 
-from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user_model, logout
 from django.contrib import messages
-
-from . import services
-from .models import Item
 
 def login_view(request):
     if request.method == "POST":
@@ -17,13 +14,7 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-
-            # Si es admin, llevar a la lista
-            if user.is_superuser:
-                return render(request, 'list.html')  # muestra list.html directamente
-
-            # Si no es admin, puedes redirigir a otra página
-            return redirect('login.html')  
+            return redirect('simular')  
 
         else:
             messages.error(request, "Credenciales inválidas")
@@ -31,65 +22,57 @@ def login_view(request):
 
     return render(request, 'login.html')
 
+User = get_user_model()
+
+def register_view(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if password != confirm_password:
+            messages.error(request, "Las contraseñas no coinciden.")
+            return render(request, "register.html")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "El correo ya está registrado.")
+            return render(request, "register.html")
+
+        user = User.objects.create_user(email=email, password=password)
+        user.save()
+
+        messages.success(request, "Usuario creado con éxito. Ahora inicia sesión.")
+        return redirect("login")
+
+    return render(request, "register.html")
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 
 def items_list_page(request):
     # la página frontend cargará datos con fetch desde la API
-    return render(request, 'list.html')
-
-
-def items_form_page(request):
-    return render(request, 'form.html')
-
-
-# API endpoints (JSON)
-
-def api_list_items(request):
-    items = services.list_items()
-    data = [
-        {'id': it.id, 'name': it.name, 'description': it.description, 'created_at': it.created_at.isoformat()}
-        for it in items
-    ]
-    return JsonResponse({'items': data})
-
+    return render(request, 'simulador.html')
 
 @csrf_exempt
-def api_create_item(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        name = data.get('name')
-        description = data.get('description')
+def simular(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            monto = float(data.get("monto", 0))
+            meses = int(data.get("meses", 1))
+            tasa_interes = 0.05
 
-        item = Item.objects.create(name=name, description=description)
-        return JsonResponse({
-            'id': item.id,
-            'name': item.name,
-            'description': item.description
-        })
+            cuota = (monto * (1 + tasa_interes)) / meses
 
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+            return JsonResponse({
+                "monto": monto,
+                "meses": meses,
+                "tasa_interes": tasa_interes,
+                "cuota_mensual": round(cuota, 2)
+            })
+        except Exception as e:
+            return JsonResponse({"error": f"Error procesando datos: {str(e)}"}, status=400)
 
-@csrf_exempt
-def api_get_update_delete_item(request, item_id):
-    # GET: obtener, PUT: actualizar, DELETE: borrar
-    if request.method == 'GET':
-        item = services.get_item(item_id)
-        if not item:
-            return HttpResponseNotFound()
-        return JsonResponse({'id': item.id, 'name': item.name, 'description': item.description})
-
-    if request.method == 'PUT':
-        payload = json.loads(request.body.decode('utf-8'))
-        name = payload.get('name')
-        description = payload.get('description')
-        item = services.update_item(item_id, name=name, description=description)
-        if not item:
-            return HttpResponseNotFound()
-        return JsonResponse({'id': item.id, 'name': item.name, 'description': item.description})
-
-    if request.method == 'DELETE':
-        ok = services.delete_item(item_id)
-        if not ok:
-            return HttpResponseNotFound()
-        return JsonResponse({'deleted': True})
-
-    return HttpResponse(status=405)
+    # 🔴 IMPORTANTE: si llega por GET, que devuelva JSON, no HTML
+    return JsonResponse({"error": "Usa POST con monto y meses para simular."}, status=405)

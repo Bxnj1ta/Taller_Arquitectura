@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro</title>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container login-box">
+        <h2>Crear Cuenta</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="alert">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <label>Correo electrónico</label>
+            <input type="email" name="email" required>
+
+            <label>Contraseña</label>
+            <input type="password" name="password" required>
+
+            <label>Confirmar Contraseña</label>
+            <input type="password" name="confirm_password" required>
+
+            <button type="submit" class="btn">Registrarse</button>
+        </form>
+
+        <p>¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a></p>
+    </div>
+</body>
+</html>

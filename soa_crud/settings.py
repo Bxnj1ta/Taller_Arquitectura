@@ -15,9 +15,12 @@ DEBUG = config("DEBUG", cast=bool, default=False)
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = "items.CustomUser"
+
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/list/'
 LOGOUT_REDIRECT_URL = '/login/'
+STATIC_URL = '/static/'
 
 # Application definition
 
@@ -42,6 +45,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+PASSWORD_HASHERS = [
+    "items.hashers.SHA512PasswordHasher",  # hash con 512
+]
+
+
+
 ROOT_URLCONF = "soa_crud.urls"
 
 TEMPLATES = [
@@ -51,6 +60,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                'django.template.context_processors.debug',
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
