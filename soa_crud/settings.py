@@ -18,7 +18,7 @@ ALLOWED_HOSTS = []
 AUTH_USER_MODEL = "items.CustomUser"
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/list/'
+LOGIN_REDIRECT_URL = '/simulador/'
 LOGOUT_REDIRECT_URL = '/login/'
 STATIC_URL = '/static/'
 

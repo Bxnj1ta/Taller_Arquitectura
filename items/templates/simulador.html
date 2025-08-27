@@ -11,6 +11,13 @@
 <body>
   <div class="container">
     <h2>Simulador de Créditos</h2>
+        <form method="post" action="{% url 'logout' %}" style="text-align:right; margin-bottom:20px;">
+        {% csrf_token %}
+        <button type="submit" style="background:#d00000; color:white; padding:10px 15px; border:none; border-radius:8px; cursor:pointer;">
+            🚪 Cerrar sesión
+        </button>
+    </form>
+    
     <form id="simuladorForm" method="post">
         {% csrf_token %}
         <label for="monto">Monto</label>
