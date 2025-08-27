@@ -1,5 +1,3 @@
-# items/hashers.py
-
 import hashlib
 from django.contrib.auth.hashers import BasePasswordHasher
 from django.utils.crypto import constant_time_compare

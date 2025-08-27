@@ -58,13 +58,44 @@
             });
 
             const data = await response.json();
-            document.getElementById("resultado").innerText = JSON.stringify(data, null, 2);
+            // Validar si hubo error
+            if (data.error) {
+                document.getElementById("resultado").innerHTML = `
+                    <p style="color: red;">⚠️ ${data.error}</p>
+                `;
+                return;
+            }
+
+            // Construir salida 
+            let html = `
+                <div style="padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9f9f9;">
+                    <h3 style="color:#0077b6;">📊 Resultado de la Simulación</h3>
+                    <p><strong>Monto:</strong> $${data.monto.toFixed(2)}</p>
+                    <p><strong>Meses:</strong> ${data.meses}</p>
+                    <hr>
+            `;
+
+            for (const [activo, valores] of Object.entries(data.resultados)) {
+                html += `
+                    <div style="margin:15px; padding:15px; border:1px solid #ccc; border-radius:10px; background:#ffffff;">
+                        <h4 style="color:#023e8a;">${activo}</h4>
+                        <p>💰 <strong>Esperado:</strong> $${valores.esperado}</p>
+                        <p>📈 <strong>Mejor caso:</strong> $${valores.mejor}</p>
+                        <p>📉 <strong>Peor caso:</strong> $${valores.peor}</p>
+                        <hr>
+                        <h3 style="color:#d00000;">🔎 Recomendación</h3>
+                        <p>${valores.recomendacion}</p>
+                    </div>
+                `;
+            }
+            html += "</div>";
+            document.getElementById("resultado").innerHTML = html;
+
+
         } catch (error) {
             console.error("Error en la solicitud:", error);
         }
     });
 </script>
-
-
 </body>
 </html>

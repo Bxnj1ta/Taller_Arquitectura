@@ -61,18 +61,48 @@ def simular(request):
             data = json.loads(request.body)
             monto = float(data.get("monto", 0))
             meses = int(data.get("meses", 1))
-            tasa_interes = 0.05
 
-            cuota = (monto * (1 + tasa_interes)) / meses
+            activos = {
+                "CDT Bancario": {"retorno": 0.006, "volatilidad": 0.001},
+                "S&P 500": {"retorno": 0.01, "volatilidad": 0.03},
+                "Cripto (BTC)": {"retorno": 0.02, "volatilidad": 0.08},
+                "NFTs": {"retorno": 0.03, "volatilidad": 0.15},
+            }
+
+            resultados = {}
+
+            for nombre, params in activos.items():
+                r = params["retorno"]
+                vol = params["volatilidad"]
+
+                esperado = monto * ((1 + r) ** meses)
+                mejor = monto * ((1 + (r + vol)) ** meses)
+                peor = monto * ((1 + max(r - vol, -0.99)) ** meses)
+
+                # --- Recomendación individual ---
+                if nombre == "CDT Bancario":
+                    recomendacion = "El CDT es la opción más segura con bajo riesgo, ideal si priorizas estabilidad."
+                elif nombre == "S&P 500":
+                    recomendacion = "El S&P 500 ofrece un buen equilibrio entre riesgo y rentabilidad a mediano plazo."
+                elif nombre == "Cripto (BTC)":
+                    recomendacion = "Cripto tiene alto potencial de crecimiento, pero con mucha volatilidad. Úsalo solo si toleras riesgo alto."
+                else:
+                    recomendacion = "NFTs muestran la mayor ganancia esperada, pero también un riesgo extremo. Muy especulativo."
+
+                resultados[nombre] = {
+                    "esperado": round(esperado, 2),
+                    "mejor": round(mejor, 2),
+                    "peor": round(peor, 2),
+                    "recomendacion": recomendacion
+                }
 
             return JsonResponse({
                 "monto": monto,
                 "meses": meses,
-                "tasa_interes": tasa_interes,
-                "cuota_mensual": round(cuota, 2)
+                "resultados": resultados
             })
+
         except Exception as e:
             return JsonResponse({"error": f"Error procesando datos: {str(e)}"}, status=400)
 
-    # 🔴 IMPORTANTE: si llega por GET, que devuelva JSON, no HTML
     return JsonResponse({"error": "Usa POST con monto y meses para simular."}, status=405)

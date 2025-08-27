@@ -209,11 +209,18 @@ button, .btn {
     background: darkred;
 }
 #resultado {
-  margin-top: 20px;
-  padding: 10px;
-  background: #f4f4f4;
-  border: 1px solid #ccc;
-  white-space: pre-wrap;
-  max-height: 400px;
-  overflow-y: auto;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+}
+#resultado h3 {
+    margin-top: 0;
+    color: #0077b6;
+}
+#resultado p {
+    margin: 5px 0;
 }
