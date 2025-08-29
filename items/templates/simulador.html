@@ -79,8 +79,8 @@
             let html = `
                 <div style="padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9f9f9;">
                     <h3 style="color:#0077b6;">📊 Resultado de la Simulación</h3>
-                    <p><strong>Monto:</strong> $${data.monto ? data.monto.toFixed(2) : "No disponible"}</p>
-                    <p><strong>Meses:</strong> ${data.meses}</p>
+                    <p><strong>Monto:</strong> $${data.simulacion?.monto ? Number(data.simulacion.monto).toFixed(2) : "No disponible"}</p>
+                    <p><strong>Meses:</strong> ${data.simulacion?.meses ?? "No disponible"}</p>
                     <hr>
             `;
 
