@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect 
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth import authenticate, login, get_user_model, logout
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import Simulacion
+from .serializers import SimulacionSerializer
+from django_ratelimit.decorators import ratelimit
+from items.services.lambda_service import LambdaService
 
 def login_view(request):
     if request.method == "POST":
@@ -50,17 +55,30 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+@login_required     #Asi ningun usuario anonimo podra acceder a esas rutas API1
 def items_list_page(request):
     # la página frontend cargará datos con fetch desde la API
     return render(request, 'simulador.html')
 
+@login_required
+def detalle_simulacion(request, pk):
+    simulacion = get_object_or_404(Simulacion, pk=pk, user=request.user)
+    return JsonResponse({"monto": simulacion.monto, "meses": simulacion.meses})
+
+@login_required
 @csrf_exempt
+@ratelimit(key='user_or_ip', rate='5/m', block=True)    #máximo 5 requests por minuto
 def simular(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             monto = float(data.get("monto", 0))
             meses = int(data.get("meses", 1))
+            #API6: Validaciones adicionales junto con login_required y rate-limiting
+            if monto <= 0 or monto > 100000000:
+                return JsonResponse({"error": "Monto inválido"}, status=400)
+            if meses <= 0 or meses > 360:
+                return JsonResponse({"error": "Meses inválidos"}, status=400)
 
             activos = {
                 "CDT Bancario": {"retorno": 0.006, "volatilidad": 0.001},
@@ -70,7 +88,6 @@ def simular(request):
             }
 
             resultados = {}
-
             for nombre, params in activos.items():
                 r = params["retorno"]
                 vol = params["volatilidad"]
@@ -79,15 +96,14 @@ def simular(request):
                 mejor = monto * ((1 + (r + vol)) ** meses)
                 peor = monto * ((1 + max(r - vol, -0.99)) ** meses)
 
-                # --- Recomendación individual ---
                 if nombre == "CDT Bancario":
                     recomendacion = "El CDT es la opción más segura con bajo riesgo, ideal si priorizas estabilidad."
                 elif nombre == "S&P 500":
                     recomendacion = "El S&P 500 ofrece un buen equilibrio entre riesgo y rentabilidad a mediano plazo."
                 elif nombre == "Cripto (BTC)":
-                    recomendacion = "Cripto tiene alto potencial de crecimiento, pero con mucha volatilidad. Úsalo solo si toleras riesgo alto."
+                    recomendacion = "Cripto tiene alto potencial de crecimiento, pero con mucha volatilidad."
                 else:
-                    recomendacion = "NFTs muestran la mayor ganancia esperada, pero también un riesgo extremo. Muy especulativo."
+                    recomendacion = "NFTs muestran la mayor ganancia esperada, pero también un riesgo extremo."
 
                 resultados[nombre] = {
                     "esperado": round(esperado, 2),
@@ -96,9 +112,17 @@ def simular(request):
                     "recomendacion": recomendacion
                 }
 
+            # ✅ Guardar simulación en BD
+            simulacion = Simulacion.objects.create(
+                user=request.user,
+                monto=monto,
+                meses=meses
+            )
+
+            serializer = SimulacionSerializer(simulacion)
+
             return JsonResponse({
-                "monto": monto,
-                "meses": meses,
+                "simulacion": serializer.data,   # Solo datos controlados
                 "resultados": resultados
             })
 
@@ -106,3 +130,14 @@ def simular(request):
             return JsonResponse({"error": f"Error procesando datos: {str(e)}"}, status=400)
 
     return JsonResponse({"error": "Usa POST con monto y meses para simular."}, status=405)
+
+@login_required
+def historial_simulaciones(request):
+    simulaciones = Simulacion.objects.filter(user=request.user).order_by("-creado")
+    serializer = SimulacionSerializer(simulaciones, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+def ejecutar_lambda(request):
+    client = LambdaService()
+    result = client.invoke("arquitectura_software", {"numero": 42})
+    return JsonResponse(result)

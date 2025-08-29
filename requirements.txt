@@ -11,3 +11,4 @@ psycopg2-binary==2.9.9   # PostgreSQL
 pytest==8.2.2
 pytest-django==4.8.0
 httpx==0.27.0  
+djangorestframework-simplejwt==5.5.1

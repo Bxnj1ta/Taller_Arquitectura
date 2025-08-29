@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -28,7 +29,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+#Para el historial de las simulaciones por usuario
+class Simulacion(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    monto = models.FloatField()
+    meses = models.IntegerField()
+    creado = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Simulación de {self.user.email} - {self.monto} en {self.meses} meses"
+    
 class Item(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)

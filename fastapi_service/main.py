@@ -2,12 +2,14 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 import boto3
 import io
+from decouple import config
 
 # 🔑 Credenciales AWS
-AWS_ACCESS_KEY_ID = "AKIASDHZAEOPQQF53BHO"
-AWS_SECRET_ACCESS_KEY = "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"
-AWS_STORAGE_BUCKET_NAME = "bucket-arquitectura-software"
-AWS_S3_REGION_NAME = "us-east-2"
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME") 
+AWS_QUERYSTRING_AUTH = config("AWS_QUERYSTRING_AUTH")   
 
 # Cliente S3
 s3_client = boto3.client(
