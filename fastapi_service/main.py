@@ -3,13 +3,14 @@ from fastapi.responses import StreamingResponse
 import boto3
 import io
 from decouple import config
+from mangum import Mangum   # 👈 Import clave
 
-# 🔑 Credenciales AWS
+# 🔑 Credenciales AWS (debes pasarlas como Variables de Entorno en Lambda, no con .env)
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME") 
-AWS_QUERYSTRING_AUTH = config("AWS_QUERYSTRING_AUTH")   
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME")
+AWS_QUERYSTRING_AUTH = config("AWS_QUERYSTRING_AUTH")
 
 # Cliente S3
 s3_client = boto3.client(
@@ -49,3 +50,6 @@ def download_file(filename: str):
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+# 👇 Handler para AWS Lambda
+handler = Mangum(app)

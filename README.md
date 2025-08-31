@@ -126,16 +126,16 @@ Vista con botones de **Editar** y **Borrar**, cargada dinámicamente con JavaScr
 
 | Riesgo OWASP API | Estado | Implementación |
 |------------------|--------|----------------|
-| **API1 – Broken Object Level Authorization** | ✅ | Validación de objetos por usuario con `get_object_or_404` |
-| **API2 – Broken User Authentication** | ✅ | Django auth, JWT, hashing de contraseñas, CSRF |
-| **API3 – Excessive Data Exposure** | ✅ | Serializadores limitados, exclusión de campos sensibles |
-| **API4 – Lack of Resources & Rate Limiting** | ✅ (básico) | Throttling en DRF; falta Redis/Memcached en prod |
-| **API5 – Broken Function Level Authorization** | ✅ | Roles y `@permission_classes` aplicados |
-| **API6 – Mass Assignment** | ✅ | Validación explícita en `serializers.py`, `read_only` en campos |
-| **API7 – Security Misconfiguration** | ✅ | `DEBUG=False`, CSRF activo, headers de seguridad |
-| **API8 – Injection** | ✅ | ORM seguro, sanitización de entradas |
-| **API9 – Improper Assets Management** | ✅ | Versionado `/api/v1`, eliminación de endpoints inseguros |
-| **API10 – Insufficient Logging & Monitoring** | ✅ (básico) | Logging Django; falta SIEM/monitoring en prod |
+| **API1 – Autorización a nivel objeto roto** | ✅ | Validación de objetos por usuario con `get_object_or_404` |
+| **API2 – Autenticación rota** | ✅ | Django auth, JWT, hashing de contraseñas, CSRF |
+| **API3 – Autorización a nivel de propiedad de objeto roto** | ✅ | Serializadores limitados, exclusión de campos sensibles |
+| **API4 – Consumo de recursos sin restricciones** | ✅ (básico) | Throttling en DRF; falta Redis/Memcached en prod |
+| **API5 – Autorización a nivel de función rota** | ✅ | Roles y `@permission_classes` aplicados |
+| **API6 – Acceso sin restricciones a flujos comerciales sensibles** | ✅ | Validación explícita en `serializers.py`, `read_only` en campos |
+| **API7 – Falsificación de solicitudes del lado del servidor** | ✅ | `DEBUG=False`, CSRF activo, headers de seguridad |
+| **API8 – MAla configuración de seguridad** | ✅ | ORM seguro, sanitización de entradas |
+| **API9 – Gestión inadecuada del inventario** | ✅ | Versionado `/api/v1`, eliminación de endpoints inseguros |
+| **API10 – Consumo inseguro de API** | ✅ (básico) | Logging Django; falta SIEM/monitoring en prod |
 
 ---
 

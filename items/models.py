@@ -39,6 +39,20 @@ class Simulacion(models.Model):
     def __str__(self):
         return f"Simulación de {self.user.email} - {self.monto} en {self.meses} meses"
     
+#Modelo para almacenar los precios reales
+class PrecioActivo(models.Model):
+    simbolo = models.CharField(max_length=20)   # ej: SPY, BTC
+    nombre = models.CharField(max_length=50)    # ej: S&P 500, Bitcoin
+    fecha = models.DateField()
+    cierre = models.FloatField()
+
+    class Meta:
+        unique_together = ("simbolo", "fecha")
+        ordering = ["-fecha"]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.simbolo}) - {self.fecha}: {self.cierre}"
+    
 class Item(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)

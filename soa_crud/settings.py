@@ -122,7 +122,7 @@ s3_client = boto3.client(
 )
                        
 # URL base de los archivos
-AWS_S3_CUSTOM_DOMAIN = f"https://bucket-arquitectura-software.s3.amazonaws.com"
+AWS_S3_CUSTOM_DOMAIN = f"http://bucket-arquitectura-software.s3-website.us-east-2.amazonaws.com "
 
 # Configurar almacenamiento de archivos estáticos y media
 STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
