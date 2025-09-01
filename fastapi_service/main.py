@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 import boto3
 import io
+import os
+from dotenv import load_dotenv
 
 # 🔑 Credenciales AWS
 AWS_ACCESS_KEY_ID = "AKIASDHZAEOPQQF53BHO"
@@ -47,3 +49,13 @@ def download_file(filename: str):
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+load_dotenv()
+
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+
+@app.get("/items/")
+def read_items(db: Session = Depends(get_db)):
+    return db.query(Item).all()

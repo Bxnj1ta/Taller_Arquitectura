@@ -1,6 +1,7 @@
 import boto3
 from pathlib import Path
 from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,6 +22,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/simulador/'
 LOGOUT_REDIRECT_URL = '/login/'
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Application definition
 
