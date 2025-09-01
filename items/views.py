@@ -5,8 +5,61 @@ import json
 from django.contrib.auth import authenticate, login, get_user_model, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Simulacion, PrecioActivo
-from .serializers import SimulacionSerializer
+from .models import Simulacion, PrecioActivo, Item
+from .serializers import SimulacionSerializer, ItemSerializer
+
+# --- CRUD seguro para Item ---
+from django.views.decorators.http import require_http_methods
+
+@login_required
+@require_http_methods(["POST"])
+@csrf_exempt
+def crear_item(request):
+    try:
+        data = json.loads(request.body)
+        serializer = ItemSerializer(data=data)
+        if not serializer.is_valid():
+            return JsonResponse({"error": serializer.errors}, status=400)
+        item = serializer.save()
+        return JsonResponse(ItemSerializer(item).data, status=201)
+    except Exception as e:
+        return JsonResponse({"error": f"Error creando item: {str(e)}"}, status=400)
+
+
+@login_required
+@require_http_methods(["GET"])
+def listar_items(request):
+    items = Item.objects.all().order_by("-created_at")
+    serializer = ItemSerializer(items, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+
+@login_required
+@require_http_methods(["PUT"])
+@csrf_exempt
+def actualizar_item(request, pk):
+    try:
+        item = get_object_or_404(Item, pk=pk)
+        data = json.loads(request.body)
+        serializer = ItemSerializer(item, data=data, partial=True)
+        if not serializer.is_valid():
+            return JsonResponse({"error": serializer.errors}, status=400)
+        item = serializer.save()
+        return JsonResponse(ItemSerializer(item).data)
+    except Exception as e:
+        return JsonResponse({"error": f"Error actualizando item: {str(e)}"}, status=400)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+@csrf_exempt
+def eliminar_item(request, pk):
+    try:
+        item = get_object_or_404(Item, pk=pk)
+        item.delete()
+        return JsonResponse({"message": "Item eliminado"})
+    except Exception as e:
+        return JsonResponse({"error": f"Error eliminando item: {str(e)}"}, status=400)
 from django_ratelimit.decorators import ratelimit
 from items.services.lambda_service import LambdaService
 from .services.market_service import MarketService
@@ -85,13 +138,15 @@ def simular(request):
 
     try:
         data = json.loads(request.body)
-        monto = float(data.get("monto", 0))
-        meses = int(data.get("meses", 1))
-
-        if not (0 < monto <= 100000000):
-            return JsonResponse({"error": "Monto inválido"}, status=400)
-        if not (0 < meses <= 360):
-            return JsonResponse({"error": "Meses inválidos"}, status=400)
+        # Sanitización y validación usando el serializer
+        serializer = SimulacionSerializer(data={
+            "monto": data.get("monto"),
+            "meses": data.get("meses")
+        })
+        if not serializer.is_valid():
+            return JsonResponse({"error": serializer.errors}, status=400)
+        monto = serializer.validated_data["monto"]
+        meses = serializer.validated_data["meses"]
 
         # --- Activos ---
         activos = {"CDT Bancario": {"retorno": 0, "volatilidad": 0.001}}
@@ -141,7 +196,6 @@ def simular(request):
             # calculamos conveniencia relativa frente al CDT en porcentaje
             conveniencia = round((esperado - cdt_esperado) / cdt_esperado * 100, 2)
             
-            # calculamos conveniencia relativa frente al CDT en porcentaje
             resultados[nombre] = {
                 "esperado": round(esperado,2), 
                 "mejor": round(mejor,2), 
