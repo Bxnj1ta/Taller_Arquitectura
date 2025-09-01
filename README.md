@@ -121,3 +121,24 @@ Vista con botones de **Editar** y **Borrar**, cargada dinámicamente con JavaScr
 - AWS S3 (almacenamiento de archivos)
 - AWS Lambda (serverless functions)
 ---
+
+# 📊 Estado de Cumplimiento OWASP API Top 10
+
+| Riesgo OWASP API | Estado | Implementación |
+|------------------|--------|----------------|
+| **API1 – Autorización a nivel objeto roto** | ✅ | Validación de objetos por usuario con `get_object_or_404` |
+| **API2 – Autenticación rota** | ✅ | Django auth, JWT, hashing de contraseñas, CSRF |
+| **API3 – Autorización a nivel de propiedad de objeto roto** | ✅ | Serializadores limitados, exclusión de campos sensibles |
+| **API4 – Consumo de recursos sin restricciones** | ✅ (básico) | Throttling en DRF; falta Redis/Memcached en prod |
+| **API5 – Autorización a nivel de función rota** | ✅ | Roles y `@permission_classes` aplicados |
+| **API6 – Acceso sin restricciones a flujos comerciales sensibles** | ✅ | Validación explícita en `serializers.py`, `read_only` en campos |
+| **API7 – Falsificación de solicitudes del lado del servidor** | ✅ | `DEBUG=False`, CSRF activo, headers de seguridad |
+| **API8 – MAla configuración de seguridad** | ✅ | ORM seguro, sanitización de entradas |
+| **API9 – Gestión inadecuada del inventario** | ✅ | Versionado `/api/v1`, eliminación de endpoints inseguros |
+| **API10 – Consumo inseguro de API** | ✅ (básico) | Logging Django; falta SIEM/monitoring en prod |
+
+---
+
+📌 **Resumen**:  
+- ✔️ APIs 1–9 están **implementadas y seguras** en el entorno actual.  
+- ⚠️ APIs 4 y 10 requieren **endurecimiento en producción** (Redis/Memcached para rate limiting + SIEM para logs).  

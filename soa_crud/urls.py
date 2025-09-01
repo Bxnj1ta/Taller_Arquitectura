@@ -4,14 +4,12 @@ from django.shortcuts import redirect
 from items import views as item_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('superpanel/', admin.site.urls),   #Cambio de url de admin (Más seguro/API8)
     path('login/', item_views.login_view, name='login'),
     path('register/', item_views.register_view, name='register'),
     path('logout/', item_views.logout_view, name='logout'),
     #página frontend
     path('simulador/', item_views.items_list_page, name='simular'),
-    #endpoint JSON
-    path("api/simular/", item_views.simular, name="api_simular"),
     path('', lambda request: redirect('login')),
     path('', include('items.urls')),  
 ]
