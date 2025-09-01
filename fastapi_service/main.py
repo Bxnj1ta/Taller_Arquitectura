@@ -12,18 +12,26 @@ AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME")
 AWS_QUERYSTRING_AUTH = config("AWS_QUERYSTRING_AUTH")
 
-# Cliente S3
-s3_client = boto3.client(
-    "s3",
+
+# Inyección de dependencias: permite pasar el cliente S3 como argumento (útil para pruebas y desacoplamiento)
+def get_s3_client(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_S3_REGION_NAME,
-)
+    region_name=AWS_S3_REGION_NAME
+):
+    return boto3.client(
+        "s3",
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=region_name,
+    )
+
+s3_client = get_s3_client()
 
 app = FastAPI()
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), s3_client=s3_client):
     try:
         s3_client.upload_fileobj(
             file.file,
@@ -37,16 +45,24 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+from fastapi import Path
+import re
+
+def sanitize_filename(filename: str) -> str:
+    # Permitir solo letras, números, guiones, puntos y guion bajo
+    return re.sub(r'[^\w\-.]', '_', filename)
+
 @app.get("/download/{filename}")
-def download_file(filename: str):
+def download_file(filename: str = Path(..., min_length=1, max_length=200), s3_client=s3_client):
     try:
+        safe_filename = sanitize_filename(filename)
         file_stream = io.BytesIO()
-        s3_client.download_fileobj(AWS_STORAGE_BUCKET_NAME, filename, file_stream)
+        s3_client.download_fileobj(AWS_STORAGE_BUCKET_NAME, safe_filename, file_stream)
         file_stream.seek(0)
         return StreamingResponse(
             file_stream,
             media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={safe_filename}"}
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

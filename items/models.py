@@ -53,10 +53,19 @@ class PrecioActivo(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.simbolo}) - {self.fecha}: {self.cierre}"
     
+
+from django.utils.html import strip_tags
+
 class Item(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Sanitización: eliminar etiquetas HTML y espacios peligrosos
+        self.name = strip_tags(self.name).strip()
+        self.description = strip_tags(self.description).strip()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.id} - {self.name}"
