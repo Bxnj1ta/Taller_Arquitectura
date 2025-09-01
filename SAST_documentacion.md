@@ -5,7 +5,7 @@
 Se ejecutó el siguiente comando para analizar el código fuente en busca de vulnerabilidades de seguridad:
 
 ```pwsh
-& "C:/David Bedoya/David Bedoya/Estudio/Taller_CRUD/soa_crud/Scripts/python.exe" -m bandit -r items/ fastapi_service/ soa_crud/ -f markdown -o SAST_report.md
+  -m bandit -r items/ fastapi_service/ soa_crud/ -f markdown -o SAST_report.md
 ```
 
 ## Resultados

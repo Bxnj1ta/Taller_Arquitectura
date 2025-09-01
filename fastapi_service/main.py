@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import Depends, FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 import boto3
 import io
@@ -6,6 +6,9 @@ import os
 from dotenv import load_dotenv
 from decouple import config
 from mangum import Mangum   # 👈 Import clave
+from fastapi_service.dependencies import get_db
+from items.models import Item
+from package.boto3.session import Session  
 
 # 🔑 Credenciales AWS (debes pasarlas como Variables de Entorno en Lambda, no con .env)
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
