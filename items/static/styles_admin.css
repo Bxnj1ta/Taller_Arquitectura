@@ -1,0 +1,193 @@
+/* styles_admin.css
+   Estilos del panel administrativo
+*/
+
+/* Reset ligero */
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  background: #ffffff;
+  color: #111;
+  line-height: 1.4;
+}
+
+/* Contenedor principal centrado horizontalmente con padding */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 18px auto;
+  padding: 18px;
+}
+
+/* Tarjeta blanca con sombra */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 8px 28px rgba(22, 29, 37, 0.08);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Título principal */
+.card-title {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Meta links / usuario actual */
+.meta {
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+.meta a {
+  color: #3b82f6;
+  text-decoration: underline;
+  margin-right: 8px;
+}
+
+/* Mensajes (success/error) */
+.messages { margin: 12px 0; }
+.alert {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+.alert.error, .alert.error a { background: #fff0f0; color: #9b1c1c; border: 1px solid #f0c2c2; }
+.alert.success, .alert.success a { background: #f0fff6; color: #1f5f3b; border: 1px solid #c9efda; }
+
+/* Formularios */
+.create-section h2,
+.list-section h2 {
+  font-size: 20px;
+  margin: 18px 0 10px 0;
+  font-weight: 700;
+}
+
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.form-inline label {
+  font-size: 0.95rem;
+  margin-right: 6px;
+}
+
+.form-inline input[type="text"],
+.form-inline input[type="password"],
+.form-inline input[type="email"] {
+  flex: 1 1 220px;
+  min-width: 160px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 10px 18px;
+  margin-left: 6px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Contenedor de la tabla con scroll horizontal si hace falta */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 12px;
+  border-radius: 6px;
+}
+
+/* Tabla responsiva y con layout fijo */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 720px; /* evita reducir demasiado en pantallas pequeñas */
+  background: #fff;
+}
+
+.admin-table thead th {
+  background: #fafafa;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 2px solid #111;
+  text-align: left;
+}
+
+.admin-table tbody td {
+  padding: 10px 12px;
+  border: 2px solid #111;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Columna de acciones evita que el botón haga wrap */
+.action-cell { white-space: nowrap; }
+
+/* Asignación de anchos por columna (ajustables) */
+.admin-table th:nth-child(1), .admin-table td:nth-child(1) { width: 6%;  }
+.admin-table th:nth-child(2), .admin-table td:nth-child(2) { width: 56%; }
+.admin-table th:nth-child(3), .admin-table td:nth-child(3) { width: 12%; }
+.admin-table th:nth-child(4), .admin-table td:nth-child(4) { width: 12%; }
+.admin-table th:nth-child(5), .admin-table td:nth-child(5) { width: 14%; }
+
+/* Botón de acción en la tabla */
+.btn-action {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: none;
+  background: #0ea5a4;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+/* Estado de texto atenuado */
+.muted { color: #6b7280; font-style: italic; font-size: .95rem; }
+
+/* Pequeños ajustes visuales */
+.admin-table tr:nth-child(even) td { background: transparent; }
+
+/* Accesibilidad: filas en pantallas muy pequeñas como bloque (opcional) */
+@media (max-width: 640px) {
+  .form-inline { gap: 8px; }
+  .form-inline input[type="text"], .form-inline input[type="password"] { flex-basis: 100%; }
+  .admin-table { min-width: 520px; font-size: 0.9rem; }
+  .admin-table th:nth-child(2), .admin-table td:nth-child(2) { width: 48%; }
+  .admin-table th:nth-child(5), .admin-table td:nth-child(5) { width: 18%; }
+}
+
+/* Si prefieres mobile-first tipo 'cards' en lugar de tabla, se puede convertir aquí */

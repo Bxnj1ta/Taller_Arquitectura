@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth import authenticate, login, get_user_model, logout
@@ -26,10 +26,77 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
         if user:
             login(request, user)
+            # Si es admin o staff redirige al panel admin
+            if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+                return redirect('admin_panel')
+            # Usuario normal
             return redirect('simular')
         messages.error(request, "Credenciales inválidas")
 
     return render(request, 'login.html')
+
+# Nueva vista: panel administrativo (crear / borrar cuentas)
+@login_required
+def admin_panel(request):
+    # Permitir sólo staff/superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("Acceso denegado")
+
+    User = get_user_model()
+
+    # Manejo de acciones por POST: crear o borrar
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "create":
+            # Campos esperados: email (o username), password, is_staff(optional)
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+            is_staff = request.POST.get("is_staff") == "on"
+
+            if not email or not password:
+                messages.error(request, "Email y contraseña son obligatorios para crear un usuario.")
+            else:
+                # crear usuario respetando USERNAME_FIELD
+                username_field = getattr(User, "USERNAME_FIELD", "username")
+                create_kwargs = {username_field: email}
+
+                # Si el modelo User usa un campo 'email' aparte y create_user espera (email, password):
+                try:
+                    # intentar create_user con keyword args + password
+                    user = User.objects.create_user(**create_kwargs, password=password)
+                except TypeError:
+                    # fallback genérico: usar create() y set_password()
+                    user = User(**create_kwargs)
+                    user.set_password(password)
+                    user.save()
+
+                # marcar staff si corresponde
+                if hasattr(user, "is_staff"):
+                    user.is_staff = is_staff
+                    user.save()
+
+                messages.success(request, f"Usuario '{email}' creado correctamente.")
+
+        elif action == "delete":
+            user_id = request.POST.get("user_id")
+            if not user_id:
+                messages.error(request, "No se indicó el usuario a eliminar.")
+            else:
+                try:
+                    to_delete = User.objects.get(pk=int(user_id))
+                    # evitar que el admin se borre a sí mismo accidentalmente
+                    if to_delete.pk == request.user.pk:
+                        messages.error(request, "No puede eliminar su propia cuenta desde aquí.")
+                    else:
+                        to_delete.delete()
+                        messages.success(request, "Usuario eliminado correctamente.")
+                except User.DoesNotExist:
+                    messages.error(request, "Usuario no encontrado.")
+
+    # Listado de usuarios para mostrar en la UI
+    users = get_user_model().objects.all().order_by("pk")
+    return render(request, "admin_panel.html", {"users": users})
+
 
 
 def register_view(request):
