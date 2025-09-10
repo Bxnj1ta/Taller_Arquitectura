@@ -3,9 +3,8 @@ from fastapi.responses import StreamingResponse
 import boto3
 import io
 from decouple import config
-from mangum import Mangum   # 👈 Import clave
+from mangum import Mangum   
 
-# 🔑 Credenciales AWS (debes pasarlas como Variables de Entorno en Lambda, no con .env)
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
@@ -51,5 +50,4 @@ def download_file(filename: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-# 👇 Handler para AWS Lambda
 handler = Mangum(app)

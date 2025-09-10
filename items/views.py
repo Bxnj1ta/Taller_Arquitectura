@@ -103,9 +103,9 @@ def simular(request):
 
         # --- Activos con valores por defecto (si no funciona las apis)---
         valores_por_defecto = {
-            "S&P 500": {"retorno": 0.007, "volatilidad": 0.045},      # ~8.4% anual, volatilidad moderada
-            "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.18}, # ~18% anual, alta volatilidad
-            "NFTs": {"retorno": 0.02, "volatilidad": 0.25}          # ~24% anual, volatilidad muy alta
+            "S&P 500": {"retorno": 0.007, "volatilidad": 0.015},     # 1.5% mensual de volatilidad
+            "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.06}, # 6% mensual de volatilidad
+            "NFTs": {"retorno": 0.02, "volatilidad": 0.08}          # 8% mensual de volatilidad
         }
         for nombre, ticker in activos_query.items():
             precios = PrecioActivo.objects.filter(simbolo=ticker, fecha__gte=fecha_inicio).order_by("fecha")
