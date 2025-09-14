@@ -1,0 +1,35 @@
+name: CI/CD Secure Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit pytest pip-audit
+
+    - name: Run Tests
+      run: pytest
+
+    - name: Static Code Analysis (Bandit)
+      run: bandit -r .
+
+    - name: Dependency Audit
+      run: pip-audit
