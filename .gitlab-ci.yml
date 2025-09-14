@@ -1,15 +1,36 @@
 stages:
   - test
   - security
+  - deploy
 
-bandit_scan:
-  stage: security
-  image: python:3.11
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+before_script:
+  - python -m pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install bandit pytest pip-audit
+
+test:
+  stage: test
   script:
-    - pip install bandit
-    - bandit -r your_project/ -f json -o bandit-report.json
-  artifacts:
-    when: always
-    paths:
-      - bandit-report.json
-  
+    - pytest
+
+bandit:
+  stage: security
+  script:
+    - bandit -r .
+  allow_failure: false
+
+pip_audit:
+  stage: security
+  script:
+    - pip-audit
+  allow_failure: false
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Aquí ejecutarías el despliegue (por ejemplo, Docker + servidor)"
+  only:
+    - main
