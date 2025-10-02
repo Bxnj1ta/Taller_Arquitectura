@@ -53,6 +53,21 @@ class PrecioActivo(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.simbolo}) - {self.fecha}: {self.cierre}"
     
+#Modelo para Tipo de Suscripcion
+class Suscripcion(models.Model):
+    TIPO_CHOICES = [
+        ('gratis', 'Gratis'),
+        ('premium', 'Premium'),
+    ]
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='suscripcion')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='gratis')
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.get_tipo_display()}"
+
+
 class Item(models.Model):
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
