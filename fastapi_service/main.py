@@ -9,8 +9,8 @@ from mangum import Mangum   # 👈 Import clave
 from fastapi_service.dependencies import get_db
 from items.models import Item
 from package.boto3.session import Session  
+from mangum import Mangum   
 
-# 🔑 Credenciales AWS (debes pasarlas como Variables de Entorno en Lambda, no con .env)
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")

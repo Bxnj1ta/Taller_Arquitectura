@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Panel administrativo</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="../static/styles_admin.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="card-title">Panel administrativo</h1>
+
+            <p class="meta">Usuario actual: <strong>{{ request.user.get_username }}</strong></p>
+            <p class="meta">
+                <a href="{% url 'logout' %}">Cerrar sesión</a> |
+                <a href="{% url 'simular' %}">Volver</a>
+            </p>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <section class="create-section" aria-labelledby="crear-usuario">
+                <h2 id="crear-usuario">Crear usuario</h2>
+
+                <form method="post" class="form-inline" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create">
+
+                    <label for="email">Email / Username</label>
+                    <input id="email" name="email" type="text" required autocomplete="username">
+
+                    <label for="password">Contraseña</label>
+                    <input id="password" name="password" type="password" required autocomplete="new-password">
+
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_staff">
+                        Marcar como staff
+                    </label>
+
+                    <button type="submit" class="btn-primary">Crear usuario</button>
+                </form>
+            </section>
+
+            <section class="list-section" aria-labelledby="usuarios-existentes">
+                <h2 id="usuarios-existentes">Usuarios existentes</h2>
+
+                <div class="table-wrapper" role="region" aria-live="polite">
+                    <table class="admin-table" role="table" aria-label="Usuarios existentes">
+                        <thead>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">Username / Email</th>
+                                <th scope="col">Staff</th>
+                                <th scope="col">Superuser</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td data-label="Id">{{ u.pk }}</td>
+                                <td data-label="Username / Email" style="word-break:break-word;">{{ u.get_username }}</td>
+                                <td data-label="Staff">{% if u.is_staff %}Sí{% else %}No{% endif %}</td>
+                                <td data-label="Superuser">{% if u.is_superuser %}Sí{% else %}No{% endif %}</td>
+                                <td data-label="Acciones" class="action-cell">
+                                    {% if request.user.pk != u.pk %}
+                                        <form method="post" style="display:inline;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                            <button type="submit" class="btn-action" onclick="return confirm('Eliminar usuario {{ u.get_username }} ?')">Eliminar</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="muted">(Cuenta propia)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

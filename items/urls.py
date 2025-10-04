@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import pago_premium
 
 urlpatterns = [
     path("api/simular/", views.simular, name="api_simular"),    #endpoint JSON
@@ -10,4 +11,6 @@ urlpatterns = [
     path("api/items/create/", views.crear_item, name="api_items_crear"),
     path("api/items/<int:pk>/update/", views.actualizar_item, name="api_items_actualizar"),
     path("api/items/<int:pk>/delete/", views.eliminar_item, name="api_items_eliminar"),
+    path('admin-panel/', views.admin_panel, name='admin_panel'),
+    path('pago-premium/', pago_premium, name='pago_premium'),
 ]

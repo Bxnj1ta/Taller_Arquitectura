@@ -6,34 +6,45 @@
   <title>Simulador de Créditos</title>
     <!-- Importar Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="../static/simulador.css">
+        <link rel="stylesheet" href="../static/simulador.css">
+        <style>
+            .user-premium { color: #0077b6; font-weight: bold; }
+            .user-free { color: #888; font-weight: bold; }
+        </style>
 </head>
 <body>
-  <div class="container">
-    <h2>💰 Simulador de Inversiones</h2>
-    
-    <form method="post" action="{% url 'logout' %}" style="text-align:right;">
-      {% csrf_token %}
-      <button type="submit" class="logout-btn">🚪 Cerrar sesión</button>
-    </form>
+    <div class="container">
+        <h2>💰 Simulador de Inversiones</h2>
+                <p style="font-size:1.1em; color:#444; margin-bottom:10px;">
+                    <strong>Tipo de usuario:</strong>
+                    <span class="{% if user_type == 'Premium' %}user-premium{% else %}user-free{% endif %}">{{ user_type }}</span>
+                    {% if pago_url %}
+                        <br>
+                        <a href="{{ pago_url }}" class="btn" style="margin-top:10px; background:#0077b6; color:#fff; padding:8px 18px; border-radius:5px; text-decoration:none; display:inline-block;">Hazte Premium</a>
+                    {% endif %}
+                </p>
+        <form method="post" action="{% url 'logout' %}" style="text-align:right;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">🚪 Cerrar sesión</button>
+        </form>
 
-    <form id="simuladorForm" method="post">
-      {% csrf_token %}
-      <label for="monto">Monto de inversión</label>
-      <input type="number" id="monto" name="monto" min="1" required>
+        <form id="simuladorForm" method="post">
+            {% csrf_token %}
+            <label for="monto">Monto de inversión</label>
+            <input type="number" id="monto" name="monto" min="1" required>
 
-      <label for="meses">Plazo (meses)</label>
-      <input type="number" id="meses" name="meses" min="1" required>
+            <label for="meses">Plazo (meses)</label>
+            <input type="number" id="meses" name="meses" min="1" required>
 
-      <button type="submit">▶️ Simular</button>
-    </form>
-    <div id="resultado"></div>
+            <button type="submit">▶️ Simular</button>
+        </form>
+        <div id="resultado"></div>
 
-    <!-- Canvas donde se pintarán los gráficos -->
-    <canvas id="graficoSimulacion" width="400" height="200"></canvas>
-    <canvas id="graficoConveniencia" width="400" height="200" style="margin-top:30px;"></canvas>
+        <!-- Canvas donde se pintarán los gráficos -->
+        <canvas id="graficoSimulacion" width="400" height="200"></canvas>
+        <canvas id="graficoConveniencia" width="400" height="200" style="margin-top:30px;"></canvas>
 
-  </div>
+    </div>
 
 <script>
     function getCookie(name) {

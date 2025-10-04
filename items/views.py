@@ -1,5 +1,7 @@
+from django.urls import reverse
+# --- Simulador ---
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.auth import authenticate, login, get_user_model, logout
@@ -7,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import Simulacion, PrecioActivo, Item
 from .serializers import SimulacionSerializer, ItemSerializer
+from . import kernel
 
 # --- CRUD seguro para Item ---
 from django.views.decorators.http import require_http_methods
@@ -79,10 +82,77 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
         if user:
             login(request, user)
+            # Si es admin o staff redirige al panel admin
+            if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+                return redirect('admin_panel')
+            # Usuario normal
             return redirect('simular')
         messages.error(request, "Credenciales inválidas")
 
     return render(request, 'login.html')
+
+# Nueva vista: panel administrativo (crear / borrar cuentas)
+@login_required
+def admin_panel(request):
+    # Permitir sólo staff/superuser
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("Acceso denegado")
+
+    User = get_user_model()
+
+    # Manejo de acciones por POST: crear o borrar
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "create":
+            # Campos esperados: email (o username), password, is_staff(optional)
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+            is_staff = request.POST.get("is_staff") == "on"
+
+            if not email or not password:
+                messages.error(request, "Email y contraseña son obligatorios para crear un usuario.")
+            else:
+                # crear usuario respetando USERNAME_FIELD
+                username_field = getattr(User, "USERNAME_FIELD", "username")
+                create_kwargs = {username_field: email}
+
+                # Si el modelo User usa un campo 'email' aparte y create_user espera (email, password):
+                try:
+                    # intentar create_user con keyword args + password
+                    user = User.objects.create_user(**create_kwargs, password=password)
+                except TypeError:
+                    # fallback genérico: usar create() y set_password()
+                    user = User(**create_kwargs)
+                    user.set_password(password)
+                    user.save()
+
+                # marcar staff si corresponde
+                if hasattr(user, "is_staff"):
+                    user.is_staff = is_staff
+                    user.save()
+
+                messages.success(request, f"Usuario '{email}' creado correctamente.")
+
+        elif action == "delete":
+            user_id = request.POST.get("user_id")
+            if not user_id:
+                messages.error(request, "No se indicó el usuario a eliminar.")
+            else:
+                try:
+                    to_delete = User.objects.get(pk=int(user_id))
+                    # evitar que el admin se borre a sí mismo accidentalmente
+                    if to_delete.pk == request.user.pk:
+                        messages.error(request, "No puede eliminar su propia cuenta desde aquí.")
+                    else:
+                        to_delete.delete()
+                        messages.success(request, "Usuario eliminado correctamente.")
+                except User.DoesNotExist:
+                    messages.error(request, "Usuario no encontrado.")
+
+    # Listado de usuarios para mostrar en la UI
+    users = get_user_model().objects.all().order_by("pk")
+    return render(request, "admin_panel.html", {"users": users})
+
 
 
 def register_view(request):
@@ -111,7 +181,24 @@ def logout_view(request):
 # --- Simulador ---
 @login_required
 def items_list_page(request):
-    return render(request, 'simulador.html')
+    # Identificar tipo de usuario
+    user_type = "Premium" if getattr(request.user, "is_premium", False) else "Free"
+    pago_url = reverse('pago_premium') if user_type == "Free" else None
+    return render(request, 'simulador.html', {"user_type": user_type, "pago_url": pago_url})
+# --- Pago simulado para ser premium ---
+from django.views.decorators.http import require_http_methods
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def pago_premium(request):
+    pago_exitoso = False
+    if request.method == "POST":
+        # Simular pago: convertir usuario en premium
+        user = request.user
+        user.is_premium = True
+        user.save()
+        pago_exitoso = True
+    return render(request, "pago_premium.html", {"pago_exitoso": pago_exitoso})
 
 
 @login_required
@@ -158,9 +245,9 @@ def simular(request):
 
         # --- Activos con valores por defecto (si no funciona las apis)---
         valores_por_defecto = {
-            "S&P 500": {"retorno": 0.007, "volatilidad": 0.045},      # ~8.4% anual, volatilidad moderada
-            "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.18}, # ~18% anual, alta volatilidad
-            "NFTs": {"retorno": 0.02, "volatilidad": 0.25}          # ~24% anual, volatilidad muy alta
+            "S&P 500": {"retorno": 0.007, "volatilidad": 0.015},     # 1.5% mensual de volatilidad
+            "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.06}, # 6% mensual de volatilidad
+            "NFTs": {"retorno": 0.02, "volatilidad": 0.08}          # 8% mensual de volatilidad
         }
         for nombre, ticker in activos_query.items():
             precios = PrecioActivo.objects.filter(simbolo=ticker, fecha__gte=fecha_inicio).order_by("fecha")
@@ -224,3 +311,26 @@ def ejecutar_lambda(request):
     client = LambdaService()
     result = client.invoke("arquitectura_software", {"numero": 42})
     return JsonResponse(result)
+
+
+@login_required
+def consultar_precio(request):
+    # Ejemplo: validar tipo de usuario
+    user = request.user
+    if getattr(user, "is_premium", False):
+        kernel.K.activate_plugin("PremiumPlan")
+    else:
+        kernel.K.activate_plugin("FreePlan")
+
+    result = kernel.K.execute("consultar_precio")
+    return HttpResponse(result)
+
+@login_required
+def historial(request):
+    if getattr(request.user, "is_premium", False):
+        kernel.K.activate_plugin("PremiumPlan")
+    else:
+        kernel.K.activate_plugin("FreePlan")
+
+    result = kernel.K.execute("historial")
+    return HttpResponse(result)

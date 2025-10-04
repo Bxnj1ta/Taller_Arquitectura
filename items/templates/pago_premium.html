@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pago Premium</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f9fa; }
+    .container { max-width: 400px; margin: 60px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px #ddd; }
+    h2 { color: #0077b6; }
+    .btn { background: #0077b6; color: #fff; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1em; }
+    .btn:disabled { background: #aaa; }
+    .msg { margin-top: 20px; color: #28a745; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hazte usuario Premium</h2>
+    <p>Disfruta de todos los beneficios del plan premium: datos históricos, alertas y más.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn">Realizar pago simulado</button>
+    </form>
+    {% if pago_exitoso %}
+      <div class="msg">¡Felicidades! Ahora eres usuario Premium 🚀</div>
+      <a href="{% url 'simular' %}" class="btn" style="margin-top:15px;">Ir al simulador</a>
+    {% endif %}
+  </div>
+</body>
+</html>

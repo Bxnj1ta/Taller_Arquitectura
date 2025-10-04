@@ -8,6 +8,8 @@ urlpatterns = [
     path('login/', item_views.login_view, name='login'),
     path('register/', item_views.register_view, name='register'),
     path('logout/', item_views.logout_view, name='logout'),
+    #acceso al panel del admin
+    path('admin-panel/', item_views.admin_panel, name='admin_panel'),
     #página frontend
     path('simulador/', item_views.items_list_page, name='simular'),
     path('', lambda request: redirect('login')),

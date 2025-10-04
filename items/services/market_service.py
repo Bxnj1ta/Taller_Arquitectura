@@ -4,7 +4,7 @@ from ..models import PrecioActivo
 import requests
 from decouple import config
 import random
-
+ 
 # Ejemplo de inyección de dependencias:
 # alpha_service = AlphaVantageService()
 # banrep_service = BanrepService()
