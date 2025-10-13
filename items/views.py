@@ -19,6 +19,11 @@ import logging
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+# ===== HOME Y PÁGINAS PÚBLICAS =====
+
+def home_view(request):
+    """Página de inicio/landing page."""
+    return render(request, 'home.html')
 
 # ===== AUTENTICACIÓN =====
 
