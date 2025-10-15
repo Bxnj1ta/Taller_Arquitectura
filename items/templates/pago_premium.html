@@ -14,16 +14,117 @@
 </head>
 <body>
   <div class="container">
+    <div id="tarjeta-visual" style="width:340px;height:200px;background:linear-gradient(135deg,#0077b6 60%,#90e0ef 100%);border-radius:18px;box-shadow:0 2px 8px #bbb;margin:0 auto 24px auto;position:relative;color:#fff;overflow:hidden;">
+      <div id="logo-tarjeta-visual" style="position:absolute;top:18px;right:18px;height:40px;width:60px;text-align:right;"></div>
+      <div style="position:absolute;top:30px;left:24px;font-size:1.1em;letter-spacing:2px;opacity:0.9;">{{ datos_pago.nombre|default:'NOMBRE COMPLETO' }}</div>
+      <div id="num-tarjeta-visual" style="position:absolute;top:80px;left:24px;font-size:1.3em;letter-spacing:3px;font-family:'Courier New',monospace;">{{ datos_pago.tarjeta|default:'•••• •••• •••• ••••' }}</div>
+      <div style="position:absolute;bottom:36px;left:24px;font-size:0.95em;">Vence <span id="vencimiento-visual">{{ datos_pago.vencimiento|default:'MM/AA' }}</span></div>
+      <div style="position:absolute;bottom:36px;right:24px;font-size:0.95em;">CVV <span id="cvv-visual">{{ datos_pago.cvv|default:'•••' }}</span></div>
+    </div>
     <h2>Hazte usuario Premium</h2>
     <p>Disfruta de todos los beneficios del plan premium: datos históricos, alertas y más.</p>
     <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn">Realizar pago simulado</button>
+      <label for="nombre">Nombre completo</label>
+      <input type="text" id="nombre" name="nombre" required style="width:100%;margin-bottom:10px;" value="{{ datos_pago.nombre|default:'' }}">
+
+      <label for="cedula">Cédula</label>
+      <input type="text" id="cedula" name="cedula" required style="width:100%;margin-bottom:10px;" value="{{ datos_pago.cedula|default:'' }}">
+
+      <label for="tarjeta">Número de tarjeta</label>
+
+  <input type="text" id="tarjeta" name="tarjeta" maxlength="16" pattern="\d{16}" required style="width:100%;margin-bottom:10px;" value="{{ datos_pago.tarjeta|default:'' }}" oninput="detectarTipoTarjeta(this.value)">
+
+  <div id="logo-tarjeta" style="height:32px; margin-bottom:10px;"></div>
+
+
+  <label for="vencimiento">Fecha de vencimiento</label>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <select id="mes_venc" name="mes_venc" required style="flex:1;">
+      <option value="">Mes</option>
+      {% for m in meses %}
+        <option value="{{ m }}" {% if datos_pago.mes_venc == m %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <select id="anio_venc" name="anio_venc" required style="flex:1;">
+      <option value="">Año</option>
+      {% for y in anios %}
+        <option value="{{ y }}" {% if datos_pago.anio_venc == y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <label for="cvv">CVV</label>
+  <input type="text" id="cvv" name="cvv" maxlength="3" pattern="\d{3}" required style="width:100%;margin-bottom:18px;" value="{{ datos_pago.cvv|default:'' }}">
+
+  <button type="submit" class="btn">Realizar pago simulado</button>
+      {% if datos_pago.error %}
+        <div class="msg" style="color:#c00; background:#fee; border:1px solid #faa; margin-top:10px;">{{ datos_pago.error }}</div>
+      {% endif %}
     </form>
     {% if pago_exitoso %}
       <div class="msg">¡Felicidades! Ahora eres usuario Premium 🚀</div>
+      <div style="margin:15px 0; background:#f1f1f1; padding:10px; border-radius:8px;">
+        <strong>Datos del pago simulado:</strong><br>
+        Nombre: {{ datos_pago.nombre }}<br>
+        Cédula: {{ datos_pago.cedula }}<br>
+        Tarjeta: **** **** **** {{ datos_pago.tarjeta|slice:'-4:' }}<br>
+        Vencimiento: {{ datos_pago.vencimiento }}<br>
+        CVV: ***
+      </div>
       <a href="{% url 'simular' %}" class="btn" style="margin-top:15px;">Ir al simulador</a>
     {% endif %}
   </div>
+<script>
+// Formatea el número de tarjeta con espacios
+function formatearNumeroTarjeta(num) {
+  if (!num) return '•••• •••• •••• ••••';
+  let val = num.replace(/\D/g, '').padEnd(16, '•');
+  return val.replace(/(.{4})/g, '$1 ').trim();
+}
+
+function detectarTipoTarjeta(numero) {
+  const logoDiv = document.getElementById('logo-tarjeta');
+  logoDiv.innerHTML = '';
+  if (/^4[0-9]{0,}/.test(numero)) {
+    // Visa
+    logoDiv.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" style="height:32px;">';
+    document.getElementById('logo-tarjeta-visual').innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" style="height:40px;">';
+  } else if (/^5[1-5][0-9]{0,}/.test(numero)) {
+    // Mastercard
+    logoDiv.innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png" alt="Mastercard" style="height:42px;">';
+    document.getElementById('logo-tarjeta-visual').innerHTML = '<img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png" alt="Mastercard" style="height:40px;">';
+  } else {
+    document.getElementById('logo-tarjeta-visual').innerHTML = '';
+  }
+}
+// Mostrar logo si ya hay valor al recargar
+window.onload = function() {
+  const num = document.getElementById('tarjeta').value;
+  if(num) detectarTipoTarjeta(num);
+
+  // Inicializar tarjeta visual
+  actualizarTarjetaVisual();
+  document.getElementById('tarjeta').addEventListener('input', actualizarTarjetaVisual);
+  document.getElementById('nombre').addEventListener('input', actualizarTarjetaVisual);
+  document.getElementById('mes_venc').addEventListener('change', actualizarTarjetaVisual);
+  document.getElementById('anio_venc').addEventListener('change', actualizarTarjetaVisual);
+  document.getElementById('cvv').addEventListener('input', actualizarTarjetaVisual);
+}
+
+function actualizarTarjetaVisual() {
+  const num = document.getElementById('tarjeta').value;
+  const nombre = document.getElementById('nombre').value || 'NOMBRE COMPLETO';
+  const mes = document.getElementById('mes_venc').value;
+  const anio = document.getElementById('anio_venc').value;
+  let venc = 'MM/AA';
+  if (mes && anio) venc = mes + '/' + anio.slice(-2);
+  const cvv = document.getElementById('cvv').value || '•••';
+  document.getElementById('num-tarjeta-visual').textContent = formatearNumeroTarjeta(num);
+  document.querySelector('#tarjeta-visual div:nth-child(2)').textContent = nombre;
+  document.getElementById('vencimiento-visual').textContent = venc;
+  document.getElementById('cvv-visual').textContent = cvv.replace(/./g, '•');
+}
+</script>
 </body>
 </html>

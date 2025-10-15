@@ -280,13 +280,34 @@ from django.views.decorators.http import require_http_methods
 @require_http_methods(["GET", "POST"])
 def pago_premium(request):
     pago_exitoso = False
+    datos_pago = {}
+    meses = [f"{i:02d}" for i in range(1, 13)]
+    anios = [f"{y}" for y in range(2025, 2036)]
     if request.method == "POST":
-        # Simular pago: convertir usuario en premium
-        user = request.user
-        user.is_premium = True
-        user.save()
-        pago_exitoso = True
-    return render(request, "pago_premium.html", {"pago_exitoso": pago_exitoso})
+        nombre = request.POST.get("nombre", "")
+        cedula = request.POST.get("cedula", "")
+        tarjeta = request.POST.get("tarjeta", "")
+        mes_venc = request.POST.get("mes_venc", "")
+        anio_venc = request.POST.get("anio_venc", "")
+        cvv = request.POST.get("cvv", "")
+        vencimiento = f"{mes_venc}/{anio_venc[-2:]}" if mes_venc and anio_venc else ""
+        # Validación simple
+        error = None
+        if not (nombre and cedula and tarjeta and mes_venc and anio_venc and cvv):
+            error = "Por favor ingresa todos los datos correctamente."
+        elif not (len(tarjeta) == 16 and tarjeta.isdigit()):
+            error = "El número de tarjeta debe tener 16 dígitos."
+        elif not (len(cvv) in [3,4] and cvv.isdigit()):
+            error = "El CVV debe tener 3 o 4 dígitos."
+        if not error:
+            user = request.user
+            user.is_premium = True
+            user.save()
+            pago_exitoso = True
+            datos_pago = {"nombre": nombre, "cedula": cedula, "tarjeta": tarjeta, "vencimiento": vencimiento, "cvv": cvv, "mes_venc": mes_venc, "anio_venc": anio_venc}
+        else:
+            datos_pago = {"error": error, "nombre": nombre, "cedula": cedula, "tarjeta": tarjeta, "vencimiento": vencimiento, "cvv": cvv, "mes_venc": mes_venc, "anio_venc": anio_venc}
+    return render(request, "pago_premium.html", {"pago_exitoso": pago_exitoso, "datos_pago": datos_pago, "meses": meses, "anios": anios})
     """Página principal del simulador."""
     return render(request, 'simulador.html')
 
@@ -371,6 +392,7 @@ def simular(request):
             "S&P 500": {"retorno": 0.007, "volatilidad": 0.015},     # 1.5% mensual de volatilidad
             "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.06}, # 6% mensual de volatilidad
             "NFTs": {"retorno": 0.02, "volatilidad": 0.08}          # 8% mensual de volatilidad
+        }
         # Guardar en BD
         simulacion = Simulacion.objects.create(
             user=request.user,
