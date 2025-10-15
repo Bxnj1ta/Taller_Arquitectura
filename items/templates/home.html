@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvestSimulator - Simula tu Inversión</title>
+    <link rel="stylesheet" href="../static/home.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-brand">💰 InvestSimulator</div>
+        <div class="nav-links">
+            <a href="#features">Características</a>
+            <a href="#assets">Activos</a>
+            <a href="{% url 'login' %}" class="btn-nav">Iniciar Sesión</a>
+            <a href="{% url 'register' %}" class="btn-nav" style="background: white; color: #667eea;">Registrarse</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Simula tu Inversión</h1>
+            <p>Descubre cuánto podrías ganar invirtiendo en NFTs, Criptomonedas, S&P 500 o CDT Bancario</p>
+            <div>
+                <a href="{% url 'login' %}" class="btn-primary">Comenzar Ahora</a>
+                <a href="#features" class="btn-secondary">Conocer Más</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="features-container">
+            <h2>¿Por qué elegir InvestSimulator?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Datos Reales</h3>
+                    <p>Simulaciones basadas en datos históricos de 120 días de los activos</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Escenarios Realistas</h3>
+                    <p>Análisis de mejor caso, peor caso y escenario esperado</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Seguro y Privado</h3>
+                    <p>Tus datos están seguros. Nunca compartiré tu información</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Rápido y Fácil</h3>
+                    <p>Ingresa monto y meses, obtén resultados al instante</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Comparación CDT</h3>
+                    <p>Compara rentabilidad con la inversión más segura</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Historial Completo</h3>
+                    <p>Guarda todas tus simulaciones en tu perfil</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <div class="divider"></div>
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat">
+                <div class="stat-number">4</div>
+                <div class="stat-label">Tipos de Activos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">120</div>
+                <div class="stat-label">Días de Datos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">360</div>
+                <div class="stat-label">Meses Máximo</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Tasas Reales</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Assets Section -->
+    <section id="assets" class="assets">
+        <div class="assets-container">
+            <h2>Activos Disponibles</h2>
+            <div class="assets-grid">
+                <div class="asset-card">
+                    <div class="asset-icon">🏦</div>
+                    <h3>CDT Bancario</h3>
+                    <p>La inversión más segura con tasas DTF reales actualizadas</p>
+                </div>
+                <div class="asset-card">
+                    <div class="asset-icon">📈</div>
+                    <h3>S&P 500</h3>
+                    <p>ETF diversificado de las 500 mayores empresas de USA</p>
+                </div>
+                <div class="asset-card">
+                    <div class="asset-icon">₿</div>
+                    <h3>Bitcoin (BTC)</h3>
+                    <p>Criptomoneda principal con alta volatilidad y potencial</p>
+                </div>
+                <div class="asset-card">
+                    <div class="asset-icon">🎨</div>
+                    <h3>NFTs</h3>
+                    <p>Tokens no fungibles con mayor riesgo y potencial retorno</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 InvestSimulator. Simula antes de invertir. | Todos los derechos reservados</p>
+    </footer>
+</body>
+</html>
