@@ -72,6 +72,24 @@
                     <div class="user-info">
                         <i class="fas fa-user-circle"></i>
                         <span>{{ user.email }}</span>
+                        {% if subscription_type %}
+                            <span class="user-subscription {{ subscription_type|lower }}">
+                                {{ subscription_type }}
+                            </span>
+                            {% if subscription_type|lower == 'gratis' %}
+                                <a href="{{ upgrade_url|default:'/pago-premium/' }}" class="upgrade-btn">Hazte Premium</a>
+                            {% endif %}
+                        {% elif user.is_authenticated and user.suscripcion %}
+                            <span class="user-subscription {{ user.suscripcion.tipo }}">
+                                {{ user.suscripcion.get_tipo_display }}
+                            </span>
+                            {% if user.suscripcion.tipo == 'gratis' %}
+                                <a href="{{ upgrade_url|default:'/pago-premium/' }}" class="upgrade-btn">Hazte Premium</a>
+                            {% endif %}
+                        {% else %}
+                            <span class="user-subscription gratis">Gratis</span>
+                            <a href="{{ upgrade_url|default:'/pago-premium/' }}" class="upgrade-btn">Hazte Premium</a>
+                        {% endif %}
                     </div>
                 </div>
             </header>
