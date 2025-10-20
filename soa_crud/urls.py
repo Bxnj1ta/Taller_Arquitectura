@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', item_views.login_view, name='login'),
     path('register/', item_views.register_view, name='register'),
     path('logout/', item_views.logout_view, name='logout'),
+    path('pago-premium/', item_views.pago_premium, name='pago_premium'),
     #acceso al panel del admin
     path('admin-panel/', item_views.admin_panel, name='admin_panel'),
     #página frontend
