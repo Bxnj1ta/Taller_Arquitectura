@@ -11,8 +11,7 @@ from .models import Simulacion, PrecioActivo
 from .serializers import SimulacionSerializer
 from django_ratelimit.decorators import ratelimit
 from items.services.lambda_service import LambdaService
-from .services.market_service import MarketService
-from .services.banrep_service import BanrepService
+from .services.market_service import obtener_parametros_activos  
 import numpy as np
 from datetime import datetime, timedelta
 import logging
@@ -210,36 +209,37 @@ def detalle_simulacion(request, pk):
 
 
 @login_required
-def actualizar_precios(request):
-    """Actualiza precios de todos los activos."""
-    try:
-        result = MarketService.actualizar_activos()
-        logger.info("Precios actualizados manualmente")
-        return JsonResponse({"logs": result, "success": True})
-    except Exception as e:
-        logger.error(f"Error actualizando precios: {e}")
-        return JsonResponse({"error": f"Error actualizando precios: {str(e)}"}, status=500)
-
-
-@login_required
 @csrf_exempt
 @ratelimit(key='user_or_ip', rate='5/m', block=True)
 @require_http_methods(["POST"])
 def simular(request):
-    """
-    Simula inversión en 4 activos basado en datos históricos y tasas reales.
-    Retorna escenarios: esperado, mejor caso y peor caso.
-    
-    Request body:
-    {
-        "monto": float,  # Monto a invertir
-        "meses": int     # Meses de inversión
-    }
-    """
     try:
         data = json.loads(request.body)
         monto = float(data.get("monto", 0))
         meses = int(data.get("meses", 1))
+
+        # DEBUG TEMPORAL - VER QUÉ ESTÁ PASANDO
+        from .services.market_service import MarketDataService
+        print("🔍 INICIANDO DEBUG...")
+        MarketDataService.debug_datos_apis()
+        
+        # Obtener parámetros de activos
+        activos = obtener_parametros_activos()
+        
+        # DEBUG: Mostrar qué parámetros se van a usar
+        print("\n🎯 PARÁMETROS QUE SE USARÁN EN LA SIMULACIÓN:")
+        for nombre, params in activos.items():
+            retorno = params["retorno"]
+            volatilidad = params["volatilidad"]
+            retorno_anual = (1 + retorno) ** 12 - 1
+            print(f"   {nombre}:")
+            print(f"     - Retorno mensual: {retorno:.6f} ({retorno*100:.4f}%)")
+            print(f"     - Retorno anual: {retorno_anual:.4f} ({retorno_anual*100:.2f}%)")
+            print(f"     - Volatilidad mensual: {volatilidad:.6f} ({volatilidad*100:.4f}%)")
+            
+            # Calcular qué pasaría con estos parámetros
+            resultado_esperado = monto * ((1 + retorno) ** meses)
+            print(f"     → Resultado esperado en {meses} meses: ${resultado_esperado:,.0f}")
 
         # Validar entrada
         if not (0 < monto <= 100000000):
@@ -253,10 +253,9 @@ def simular(request):
                 status=400
             )
 
-        # Obtener tasas y activos
-        dtf_info = BanrepService.get_cdt_rate()
-        activos = _obtener_activos(dtf_info)
-
+        # ===== OBTENER PARÁMETROS DE MERCADO =====
+        logger.info(f"🔄 Usuario {request.user.email} simulando: ${monto:,.0f} por {meses} meses")
+        
         # Ejecutar simulación
         resultados = _ejecutar_simulacion(monto, meses, activos)
 
@@ -268,13 +267,25 @@ def simular(request):
         )
         serializer = SimulacionSerializer(simulacion)
 
-        logger.info(f"Simulación creada para usuario {request.user.email}: ${monto} x {meses} meses")
+        # Preparar metadata
+        metadata = {
+            "fecha_simulacion": datetime.now().isoformat(),
+            "fuentes": {
+                "cdt": activos["CDT Bancario"]["info"].get("fuente", "N/A"),
+                "sp500": activos["S&P 500"]["info"].get("fuente", "N/A"),
+                "btc": activos["Cripto (BTC)"]["info"].get("fuente", "N/A"),
+                "nfts": activos["NFTs"]["info"].get("fuente", "N/A"),
+            },
+            "tasa_dtf": activos["CDT Bancario"]["info"].get("tasa", 0) * 100,
+            "periodo_dtf": activos["CDT Bancario"]["info"].get("periodo", "N/A")
+        }
+
+        logger.info(f"✅ Simulación completada para {request.user.email}")
 
         return JsonResponse({
             "simulacion": serializer.data,
             "resultados": resultados,
-            "dtf_usada": dtf_info,
-            "fecha_simulacion": datetime.now().isoformat()
+            "metadata": metadata
         })
 
     except json.JSONDecodeError:
@@ -282,119 +293,55 @@ def simular(request):
     except ValueError as e:
         return JsonResponse({"error": f"Error en valores: {str(e)}"}, status=400)
     except Exception as e:
-        logger.error(f"Error en simulación para usuario {request.user.email}: {e}")
-        return JsonResponse({"error": "Error procesando datos"}, status=500)
-
-
-def _obtener_activos(dtf_info):
-    """
-    Obtiene retorno y volatilidad de activos desde BD o valores por defecto.
-    
-    Returns:
-        dict: Diccionario con activos y sus parámetros de retorno y volatilidad
-    """
-    fecha_inicio = datetime.today() - timedelta(days=120)
-    
-    valores_por_defecto = {
-        "CDT Bancario": {"retorno": 0, "volatilidad": 0.001},
-        "S&P 500": {"retorno": 0.007, "volatilidad": 0.015},
-        "Cripto (BTC)": {"retorno": 0.015, "volatilidad": 0.06},
-        "NFTs": {"retorno": 0.02, "volatilidad": 0.08}
-    }
-    
-    activos = {
-        "CDT Bancario": {
-            "retorno": float(dtf_info["tasa"]) / 12,
-            "volatilidad": 0.001
-        }
-    }
-    
-    # Mapeo de nombres a símbolos en BD
-    activos_query = {
-        "S&P 500": "SPY",
-        "Cripto (BTC)": "BTC",  # Cambiar de "BTC-USD" a "BTC"
-        "NFTs": "CRYPTOPUNKS"
-    }
-    
-    for nombre, ticker in activos_query.items():
-        try:
-            precios = PrecioActivo.objects.filter(
-                simbolo=ticker,
-                fecha__gte=fecha_inicio
-            ).order_by("fecha").values_list("cierre", flat=True)
-            
-            if len(precios) > 2:
-                valores = np.array([float(p) for p in precios])
-                # Evitar división por cero
-                rendimientos = np.diff(valores) / np.where(
-                    valores[:-1] != 0,
-                    valores[:-1],
-                    1
-                )
-                
-                activos[nombre] = {
-                    "retorno": float(np.mean(rendimientos)),
-                    "volatilidad": float(np.std(rendimientos))
-                }
-            else:
-                activos[nombre] = valores_por_defecto[nombre]
-                logger.warning(
-                    f"Insuficientes datos para {nombre}, usando valores por defecto"
-                )
-        except Exception as e:
-            logger.error(f"Error obteniendo datos de {nombre}: {e}")
-            activos[nombre] = valores_por_defecto[nombre]
-    
-    return activos
+        logger.error(f"❌ Error en simulación para {request.user.email}: {e}", exc_info=True)
+        return JsonResponse({"error": "Error procesando datos. Por favor intenta nuevamente."}, status=500)
 
 
 def _ejecutar_simulacion(monto, meses, activos):
     """
-    Calcula escenarios de inversión para cada activo.
-    
-    Args:
-        monto: Monto inicial a invertir
-        meses: Número de meses
-        activos: Diccionario con parámetros de cada activo
-    
-    Returns:
-        dict: Diccionario con resultados por activo
+    Versión SEGURA con límites estrictos y crecimiento realista
     """
     resultados = {}
     
-    # Baseline: CDT Bancario (inversión más segura)
-    cdt_retorno = activos["CDT Bancario"]["retorno"]
-    cdt_esperado = monto * ((1 + cdt_retorno) ** meses)
+    # Factores de crecimiento MÁXIMOS realistas (en 10 años)
+    factores_maximos = {
+        "CDT Bancario": 2.5,      # 150% en 10 años
+        "S&P 500": 4.0,           # 300% en 10 años  
+        "Cripto (BTC)": 10.0,     # 900% en 10 años
+        "NFTs": 15.0              # 1400% en 10 años
+    }
     
-    recomendaciones = {
-        "CDT Bancario": "El CDT es la opción más segura con bajo riesgo, ideal si priorizas estabilidad.",
-        "S&P 500": "El S&P 500 ofrece un buen equilibrio entre riesgo y rentabilidad a mediano plazo.",
-        "Cripto (BTC)": "Bitcoin tiene alto potencial de crecimiento, pero con volatilidad extrema.",
-        "NFTs": "NFTs muestran la mayor ganancia esperada, pero riesgo extremo de pérdida."
+    # Factores de crecimiento MÍNIMOS
+    factores_minimos = {
+        "CDT Bancario": 1.2,      # 20% en 10 años
+        "S&P 500": 0.5,           # -50% en 10 años
+        "Cripto (BTC)": 0.1,      # -90% en 10 años
+        "NFTs": 0.01              # -99% en 10 años
     }
     
     for nombre, params in activos.items():
         retorno = params["retorno"]
         volatilidad = params["volatilidad"]
         
-        # Escenario esperado (retorno promedio)
+        print(f"🎯 Simulando {nombre}: retorno={retorno:.4f} mensual, vol={volatilidad:.4f}")
+        
+        # 1. ESCENARIO ESPERADO (con límites estrictos)
         esperado = monto * ((1 + retorno) ** meses)
+        esperado = min(esperado, monto * factores_maximos[nombre])
+        esperado = max(esperado, monto * factores_minimos[nombre])
         
-        # Mejor caso (retorno + volatilidad)
-        mejor_retorno = retorno + volatilidad
+        # 2. MEJOR CASO (no extremo)
+        mejor_retorno = retorno + (volatilidad * 0.5)  # Solo media desviación estándar
         mejor = monto * ((1 + mejor_retorno) ** meses)
+        mejor = min(mejor, monto * factores_maximos[nombre] * 1.2)  # Máximo 20% extra
         
-        # Peor caso (retorno - volatilidad, mínimo -99%)
-        peor_retorno = max(retorno - volatilidad, -0.99)
+        # 3. PEOR CASO (no catastrófico)
+        peor_retorno = retorno - (volatilidad * 0.5)  # Solo media desviación estándar
+        peor_retorno = max(peor_retorno, -0.2)  # Máximo -20% mensual
         peor = monto * ((1 + peor_retorno) ** meses)
+        peor = max(peor, monto * factores_minimos[nombre])
         
-        # Conveniencia relativa al CDT (en porcentaje)
-        if cdt_esperado > 0:
-            conveniencia = round((esperado - cdt_esperado) / cdt_esperado * 100, 2)
-        else:
-            conveniencia = 0
-        
-        # Ganancia/Pérdida
+        # Cálculos
         ganancia = esperado - monto
         ganancia_porcentaje = round((ganancia / monto * 100), 2) if monto > 0 else 0
         
@@ -404,11 +351,12 @@ def _ejecutar_simulacion(monto, meses, activos):
             "peor": round(peor, 2),
             "ganancia": round(ganancia, 2),
             "ganancia_porcentaje": ganancia_porcentaje,
-            "recomendacion": recomendaciones.get(nombre, ""),
-            "conveniencia_vs_cdt": conveniencia,
+            "recomendacion": params.get("recomendacion", ""),
             "retorno_mensual": round(retorno * 100, 4),
             "volatilidad_mensual": round(volatilidad * 100, 4)
         }
+        
+        print(f"   ✅ {nombre}: ${monto:,.0f} → ${esperado:,.0f} (x{esperado/monto:.1f})")
     
     return resultados
 
@@ -426,6 +374,43 @@ def historial_simulaciones(request):
         logger.error(f"Error obteniendo historial para {request.user.email}: {e}")
         return JsonResponse({"error": "Error al obtener historial"}, status=500)
 
+
+@login_required
+def actualizar_precios(request):
+    """
+    Endpoint para actualizar manualmente los precios de mercado.
+    Útil para testing o actualizaciones forzadas.
+    """
+    try:
+        from .services.market_service import MarketDataService
+        
+        logger.info(f"🔄 Actualización manual iniciada por {request.user.email}")
+        
+        # Obtener datos frescos
+        datos = MarketDataService.obtener_datos_completos()
+        
+        logs = [
+            f"✅ CDT: {datos['cdt']['tasa']*100:.2f}% ({datos['cdt']['fuente']})",
+            f"✅ S&P 500: {len(datos['sp500']['precios'])} precios ({datos['sp500']['fuente']})",
+            f"✅ Bitcoin: {len(datos['btc']['precios'])} precios ({datos['btc']['fuente']})",
+            f"✅ NFTs: {len(datos['nfts']['precios'])} precios ({datos['nfts']['fuente']})"
+        ]
+        
+        logger.info("✅ Precios actualizados manualmente")
+        
+        return JsonResponse({
+            "success": True,
+            "logs": logs,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error actualizando precios: {e}")
+        return JsonResponse(
+            {"error": f"Error actualizando precios: {str(e)}"},
+            status=500
+        )
+    
 
 @login_required
 def ejecutar_lambda(request):
