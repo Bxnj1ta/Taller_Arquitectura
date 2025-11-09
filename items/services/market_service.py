@@ -33,6 +33,8 @@ class MarketDataService:
     BANREP_ENDPOINTS = [
         "https://www.banrep.gov.co/estadisticas/rest/estseriesopen/data/220003/json",
         "https://www.banrep.gov.co/estadisticas/rest/secure/estseriesopen/data/220003/json",
+        "https://www.banrep.gov.co/SeriesEstadisticas_Web/rest/estseriesopen/data/220003/json",
+        "https://www.banrep.gov.co/estadisticas/rest/estseriesopen/data/220003/xml",  # XML como fallback
     ]
     
     # Tasas históricas de respaldo (actualizadas enero 2025)
@@ -125,17 +127,6 @@ class MarketDataService:
             "btc": cls._obtener_datos_bitcoin(),
             "nfts": cls._obtener_datos_nfts()
         }
-        
-        # RESUMEN FINAL DE FUENTES DE DATOS
-        print("📊 RESUMEN DE FUENTES DE DATOS:")
-        print(f"   📈 CDT Bancario: {datos['cdt']['fuente']}")
-        print(f"   📊 S&P 500: {datos['sp500']['fuente']}")
-        print(f"   ₿ Bitcoin: {datos['btc']['fuente']}")
-        print(f"   🎨 NFTs: {datos['nfts']['fuente']}")
-        
-        # Contar cuántos son reales vs simulados
-        fuentes_reales = [d for d in datos.values() if d['fuente'] not in ['Simulado', 'Histórica', 'Fallback']]
-        print(f"   ✅ Datos reales: {len(fuentes_reales)}/4 | 🔄 Datos simulados: {4 - len(fuentes_reales)}/4")
         
         return datos
 
