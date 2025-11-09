@@ -271,13 +271,13 @@ def simular(request):
         metadata = {
             "fecha_simulacion": datetime.now().isoformat(),
             "fuentes": {
-                "cdt": activos["CDT Bancario"]["info"].get("fuente", "N/A"),
-                "sp500": activos["S&P 500"]["info"].get("fuente", "N/A"),
-                "btc": activos["Cripto (BTC)"]["info"].get("fuente", "N/A"),
-                "nfts": activos["NFTs"]["info"].get("fuente", "N/A"),
+                "cdt": activos["CDT Bancario"].get("info", {}).get("fuente", "N/A"),
+                "sp500": activos["S&P 500"].get("info", {}).get("fuente", "N/A"),
+                "btc": activos["Cripto (BTC)"].get("info", {}).get("fuente", "N/A"),
+                "nfts": activos["NFTs"].get("info", {}).get("fuente", "N/A"),
             },
-            "tasa_dtf": activos["CDT Bancario"]["info"].get("tasa", 0) * 100,
-            "periodo_dtf": activos["CDT Bancario"]["info"].get("periodo", "N/A")
+            "tasa_dtf": activos["CDT Bancario"].get("info", {}).get("tasa", 0) * 100,
+            "periodo_dtf": activos["CDT Bancario"].get("info", {}).get("periodo", "N/A")
         }
 
         logger.info(f"✅ Simulación completada para {request.user.email}")

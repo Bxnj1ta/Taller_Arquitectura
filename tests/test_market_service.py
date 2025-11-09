@@ -1,16 +1,15 @@
 from django.test import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from items.services.market_service import obtener_parametros_activos
 
 class TestMarketService(TestCase):
-    """Pruebas específicas para el servicio de mercado"""
     
     @patch('items.services.market_service.MarketDataService.obtener_datos_completos')
     def test_obtener_parametros_activos(self, mock_datos_mercado):
         """Prueba que el servicio de mercado procesa datos correctamente"""
         print("📊 Probando servicio de mercado con MOCK...")
         
-        # Simular respuesta de APIs externas
+        # Mock de datos de API - SIMULAR LO QUE TU CÓDIGO REAL ESPERA
         mock_datos_mercado.return_value = {
             'cdt': {
                 'tasa': 0.0925, 
@@ -40,18 +39,49 @@ class TestMarketService(TestCase):
         # Ejecutar servicio REAL
         parametros = obtener_parametros_activos()
         
-        # Verificar estructura
+        # ✅ VERIFICAR ESTRUCTURA REAL (no la que imaginamos)
         self.assertIn("CDT Bancario", parametros)
         self.assertIn("S&P 500", parametros)
         self.assertIn("Cripto (BTC)", parametros)
         self.assertIn("NFTs", parametros)
         
-        # Verificar cálculos
+        # Verificar campos que SÍ existen en tu código
         cdt_params = parametros["CDT Bancario"]
         self.assertIn("retorno", cdt_params)
         self.assertIn("volatilidad", cdt_params)
-        self.assertIn("recomendacion", cdt_params)
+        self.assertIn("info", cdt_params)  # ✅ Este campo SÍ existe
         
-        print(f"✅ CDT - Retorno: {cdt_params['retorno']*100:.2f}%")
-        print(f"✅ S&P 500 - Retorno: {parametros['S&P 500']['retorno']*100:.2f}%")
+        # Verificar tipos de datos
+        self.assertIsInstance(cdt_params["retorno"], (int, float))
+        self.assertIsInstance(cdt_params["volatilidad"], (int, float))
+        
+        print(f"✅ CDT - Retorno: {cdt_params['retorno']*100:.4f}%")
+        print(f"✅ S&P 500 - Retorno: {parametros['S&P 500']['retorno']*100:.4f}%")
+        print(f"✅ BTC - Volatilidad: {parametros['Cripto (BTC)']['volatilidad']*100:.4f}%")
         print("✓ Servicio de mercado con MOCK PASADO")
+    
+    def test_estructura_datos_activos(self):
+        """Prueba adicional: verificar estructura completa de datos"""
+        print("📋 Verificando estructura de datos...")
+        
+        # Usar mock mínimo para probar estructura
+        with patch('items.services.market_service.MarketDataService.obtener_datos_completos') as mock:
+            mock.return_value = {
+                'cdt': {'tasa': 0.09, 'fuente': 'Test', 'precios': [1.0]},
+                'sp500': {'retorno': 0.02, 'volatilidad': 0.03, 'fuente': 'Test', 'precios': [100]},
+                'btc': {'retorno': 0.03, 'volatilidad': 0.08, 'fuente': 'Test', 'precios': [100]},
+                'nfts': {'retorno': 0.02, 'volatilidad': 0.08, 'fuente': 'Test', 'precios': [100]}
+            }
+            
+            parametros = obtener_parametros_activos()
+            
+            # Verificar que todos los activos tienen estructura consistente
+            for activo, datos in parametros.items():
+                self.assertIn("retorno", datos)
+                self.assertIn("volatilidad", datos)
+                self.assertIn("info", datos)
+                self.assertIsInstance(datos["retorno"], (int, float))
+                self.assertGreaterEqual(datos["retorno"], 0)  # Retorno no negativo
+                
+            print(f"✅ Estructura validada para {len(parametros)} activos")
+            print("✓ Estructura de datos PASADA")
