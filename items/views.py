@@ -221,7 +221,7 @@ def simular(request):
         # DEBUG TEMPORAL - VER QUÉ ESTÁ PASANDO
         from .services.market_service import MarketDataService
         print("🔍 INICIANDO DEBUG...")
-        MarketDataService.debug_datos_apis()
+        #MarketDataService.debug_datos_apis()
         
         # Obtener parámetros de activos
         activos = obtener_parametros_activos()
