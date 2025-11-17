@@ -1,0 +1,199 @@
+/* top-up.css - Simulated payment experience */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(120deg, #141e30, #243b55);
+    color: #f7fafc;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.topup-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.topup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.topup-header h1 {
+    font-size: 2.2rem;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.back-link {
+    color: #f6d365;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.topup-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.payment-card,
+.wallet-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+.form-group label {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.form-group input,
+.form-group select {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #f6d365;
+    box-shadow: 0 0 0 3px rgba(246, 211, 101, 0.2);
+}
+
+.form-group span.helptext {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.submit-btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 1rem;
+    background: linear-gradient(120deg, #f6d365, #fda085);
+    color: #1a202c;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(253, 160, 133, 0.4);
+}
+
+.wallet-card h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+}
+
+.wallet-balance {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.wallet-chip {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.steps li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.steps li i {
+    color: #68d391;
+}
+
+.message-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.message-item {
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.message-item.success {
+    background: rgba(56, 161, 105, 0.2);
+    border-color: rgba(56, 161, 105, 0.4);
+}
+
+.message-item.error {
+    background: rgba(229, 62, 62, 0.15);
+    border-color: rgba(229, 62, 62, 0.4);
+}
+
+@media (max-width: 900px) {
+    body {
+        padding: 1rem;
+    }
+
+    .topup-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

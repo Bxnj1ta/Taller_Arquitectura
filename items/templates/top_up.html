@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recargar Wallet - InvestSimulator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'top-up.css' %}">
+</head>
+<body>
+    <div class="topup-wrapper">
+        <div class="topup-header">
+            <h1>Recargar Wallet</h1>
+            <a href="{% url 'simular' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Volver al dashboard
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="message-list">
+            {% for message in messages %}
+                <div class="message-item {{ message.tags }}">
+                    <i class="fas fa-info-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="topup-grid">
+            <section class="payment-card">
+                <h2>Pasarela de pago simulada</h2>
+                <p>Ingresa los datos de tu tarjeta para acreditar fondos en tu wallet.</p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            {{ form.full_name.label_tag }}
+                            {{ form.full_name }}
+                            {% for error in form.full_name.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group full-width">
+                            {{ form.card_number.label_tag }}
+                            {{ form.card_number }}
+                            {% for error in form.card_number.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.expiry_month.label_tag }}
+                            {{ form.expiry_month }}
+                            {% for error in form.expiry_month.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.expiry_year.label_tag }}
+                            {{ form.expiry_year }}
+                            {% for error in form.expiry_year.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.cvv.label_tag }}
+                            {{ form.cvv }}
+                            {% for error in form.cvv.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.amount.label_tag }}
+                            {{ form.amount }}
+                            {% for error in form.amount.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div class="message-item error">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>{{ error }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-lock"></i>
+                        Procesar recarga segura
+                    </button>
+                </form>
+            </section>
+
+            <aside class="wallet-card">
+                <h2>Resumen del wallet</h2>
+                <div class="wallet-chip">
+                    <p>Saldo disponible</p>
+                    <div class="wallet-balance">${{ wallet.balance }}</div>
+                    <small>Se actualiza automáticamente después de cada recarga.</small>
+                </div>
+                <ul class="steps">
+                    <li><i class="fas fa-check-circle"></i> Verificamos los datos del titular</li>
+                    <li><i class="fas fa-shield-alt"></i> Emulamos la autorización del banco</li>
+                    <li><i class="fas fa-wallet"></i> Acreditamos el monto en tu wallet</li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</body>
+</html>

@@ -79,11 +79,39 @@
                             <a href="{{ upgrade_url|default:'/pago-premium/' }}" class="upgrade-btn">Hazte Premium</a>
                         {% endif %}
                     </div>
+                    <div class="wallet-panel">
+                        <div class="wallet-label">Saldo Wallet</div>
+                        <div class="wallet-balance">
+                            <small>Disponible</small>
+                            <strong>{{ wallet_balance|default_if_none:"0"|floatformat:0 }} COP</strong>
+                        </div>
+                        <div class="wallet-buttons">
+                            <a href="{{ top_up_url|default:'#' }}" class="wallet-btn primary">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Recargar</span>
+                            </a>
+                            <a href="#wallet-invest" class="wallet-btn secondary">
+                                <i class="fas fa-seedling"></i>
+                                <span>Invertir</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </header>
 
             <!-- Dashboard Content -->
             <div class="dashboard-content">
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="dashboard-alert {{ message.tags }}">
+                            <i class="fas fa-info-circle"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- Simulator Section -->
                 <section id="simulator-section" class="dashboard-section active">
                     <!-- Input Panel -->
@@ -132,6 +160,24 @@
                         <div class="simulation-info">
                             <span id="simulation-monto"></span>
                             <span id="simulation-meses"></span>
+                        </div>
+                    </div>
+
+                    <div class="results-summary">
+                        <div class="summary-card primary">
+                            <p>Valor proyectado total</p>
+                            <h3 id="results-total">-</h3>
+                            <small>Suma de todos los escenarios esperados.</small>
+                        </div>
+                        <div class="summary-card secondary">
+                            <p>Activo más rentable</p>
+                            <h3 id="results-best-asset">-</h3>
+                            <small id="results-best-value">-</small>
+                        </div>
+                        <div class="summary-card neutral">
+                            <p>Rentabilidad promedio</p>
+                            <h3 id="results-average">-</h3>
+                            <small>Promedio de ganancia esperada.</small>
                         </div>
                     </div>
                     
@@ -244,6 +290,69 @@
                     <p>Próximamente: Historial de simulaciones</p>
                 </div>
             </section>
+
+            <div class="wallet-actions" id="wallet-invest">
+                <section class="investment-card">
+                    <div class="panel-header">
+                        <h2>
+                            <i class="fas fa-piggy-bank"></i>
+                            Invertir desde tu wallet
+                        </h2>
+                        <p>Después de analizar los escenarios, elige dónde quieres invertir tu saldo.</p>
+                    </div>
+                    <form method="post" action="{{ wallet_invest_url }}" class="investment-form">
+                        {% csrf_token %}
+                        <div class="investment-row">
+                            <div class="form-group">
+                                <label for="asset">
+                                    <i class="fas fa-layer-group"></i>
+                                    Activo
+                                </label>
+                                <div class="modern-select">
+                                    <i class="fas fa-layer-group select-icon"></i>
+                                    <select id="asset" name="asset" required>
+                                        {% for option in investment_options %}
+                                            <option value="{{ option.slug }}">{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span class="select-arrow">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </div>
+                                <small class="option-hint">Elige el instrumento donde deseas invertir.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="invest-amount">
+                                    <i class="fas fa-coins"></i>
+                                    Monto a invertir
+                                </label>
+                                <input type="number" id="invest-amount" name="amount" min="1000" step="1000" placeholder="500000" required>
+                                <span class="input-suffix">COP</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="invest-months">
+                                    <i class="fas fa-calendar-check"></i>
+                                    Meses simulados
+                                </label>
+                                <input type="number" id="invest-months" name="months" min="1" max="360" value="12">
+                                <span class="input-suffix">meses</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-gradient invest-btn">
+                            <i class="fas fa-rocket"></i>
+                            Invertir saldo ahora
+                        </button>
+                    </form>
+                    <div class="investment-options">
+                        {% for option in investment_options %}
+                            <div class="option-chip">
+                                <strong>{{ option.label }}</strong>
+                                <span>{{ option.descripcion }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 
@@ -506,6 +615,9 @@
 
             // Create detailed cards
             this.createDetailedCards(data.resultados);
+
+            // Update summary cards
+            this.updateResultsSummary(data.resultados);
         }
 
         updateMetricsCards(resultados) {
@@ -708,6 +820,34 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        updateResultsSummary(resultados) {
+            const entries = Object.entries(resultados || {});
+            if (!entries.length) {
+                return;
+            }
+
+            const values = entries.map(([, data]) => data);
+            const total = values.reduce((acc, item) => acc + (item.esperado || 0), 0);
+            const average = values.reduce((acc, item) => acc + (item.ganancia_porcentaje || 0), 0) / values.length;
+            const best = entries.reduce((prev, current) => {
+                return current[1].esperado > prev[1].esperado ? current : prev;
+            }, entries[0]);
+
+            const totalEl = document.getElementById('results-total');
+            if (totalEl) totalEl.textContent = formatCurrency(total);
+
+            const averageEl = document.getElementById('results-average');
+            if (averageEl) averageEl.textContent = formatPercentage(average);
+
+            const bestAssetEl = document.getElementById('results-best-asset');
+            const bestValueEl = document.getElementById('results-best-value');
+            if (bestAssetEl) bestAssetEl.textContent = best?.[0] ?? '-';
+            if (bestValueEl) {
+                const bestValue = best?.[1]?.esperado ?? 0;
+                bestValueEl.textContent = formatCurrency(bestValue);
+            }
         }
 
         getActivoIcon(activo) {

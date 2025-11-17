@@ -16,6 +16,15 @@ import numpy as np
 from datetime import datetime, timedelta
 import logging
 from . import kernel
+from decimal import Decimal, InvalidOperation
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import F
+from .forms import TopUpForm
+from .models import Wallet
+
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -151,10 +160,24 @@ def logout_view(request):
 @login_required
 def items_list_page(request):
     """Página principal del simulador."""
-    # Identificar tipo de usuario
-    user_type = "Premium" if getattr(request.user, "is_premium", False) else "Free"
+    user = request.user
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    user_type = "Premium" if getattr(user, "is_premium", False) else "Free"
     pago_url = reverse('pago_premium') if user_type == "Free" else None
-    return render(request, 'simulador.html', {"user_type": user_type, "pago_url": pago_url})
+    context = {
+        "user_type": user_type,
+        "pago_url": pago_url,
+        "wallet_balance": wallet.balance,
+        "top_up_url": reverse('top_up'),
+        "wallet_invest_url": reverse('wallet_invest'),
+        "investment_options": [
+            {"slug": "cdt", "label": "CDT Bancario", "descripcion": "Baja volatilidad, ingresos estables"},
+            {"slug": "sp500", "label": "S&P 500", "descripcion": "Portafolio diversificado de acciones"},
+            {"slug": "btc", "label": "Cripto (BTC)", "descripcion": "Alta volatilidad, alto potencial"},
+            {"slug": "nft", "label": "NFTs", "descripcion": "Activos digitales alternativos"}
+        ]
+    }
+    return render(request, 'simulador.html', context)
 # --- Pago simulado para ser premium ---
 
 @login_required
@@ -436,6 +459,132 @@ def consultar_precio(request):
     return HttpResponse(result)
 
 @login_required
+def top_up_view(request):
+    """
+    Permite al usuario agregar un monto a su wallet (saldo).
+    """
+    user = request.user
+    # Asegurar que el usuario tiene wallet (la señal la crea para nuevos usuarios)
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+
+    payment_receipt = None
+
+    if request.method == 'POST':
+        form = TopUpForm(request.POST)
+        if form.is_valid():
+            amount = form.cleaned_data['amount']
+            try:
+                with transaction.atomic():
+                    wallet_locked = Wallet.objects.select_for_update().get(pk=wallet.pk)
+                    wallet_locked.balance = F('balance') + amount
+                    wallet_locked.save()
+                payment_receipt = {
+                    "reference": f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                    "holder": form.cleaned_data["full_name"],
+                    "amount": amount,
+                    "masked_card": f"**** **** **** {form.cleaned_data['card_number'][-4:]}",
+                }
+                messages.success(request, f"Se han agregado ${amount:,.2f} COP a tu wallet.")
+                return redirect('simular')
+            except Exception as e:
+                messages.error(request, f"Error al actualizar el wallet: {e}")
+    else:
+        form = TopUpForm()
+
+    context = {
+        'form': form,
+        'wallet': wallet,
+        'payment_receipt': payment_receipt
+    }
+    return render(request, 'top_up.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def wallet_invest_view(request):
+    """
+    Permite invertir saldo del wallet en los activos principales.
+    El resultado esperado se acredita inmediatamente (simulado).
+    """
+    asset_choice = request.POST.get("asset")
+    amount_raw = request.POST.get("amount")
+    months_raw = request.POST.get("months", "12")
+
+    asset_map = {
+        "cdt": "CDT Bancario",
+        "sp500": "S&P 500",
+        "btc": "Cripto (BTC)",
+        "nft": "NFTs"
+    }
+
+    if asset_choice not in asset_map:
+        messages.error(request, "Selecciona un activo válido para invertir.")
+        return redirect('simular')
+
+    try:
+        amount = Decimal(amount_raw)
+    except (InvalidOperation, TypeError):
+        messages.error(request, "El monto ingresado no es válido.")
+        return redirect('simular')
+
+    if amount <= Decimal('0'):
+        messages.error(request, "El monto a invertir debe ser mayor que 0.")
+        return redirect('simular')
+
+    try:
+        months = int(months_raw)
+    except (TypeError, ValueError):
+        months = 12
+
+    months = max(1, min(360, months))
+
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
+    # Verificar saldo disponible antes de procesar la simulación
+    if wallet.balance < amount:
+        messages.error(request, "No tienes saldo suficiente en tu wallet para esta inversión.")
+        return redirect('simular')
+
+    try:
+        activos = obtener_parametros_activos()
+        resultados = _ejecutar_simulacion(float(amount), months, activos)
+        activo_nombre = asset_map[asset_choice]
+        if activo_nombre not in resultados:
+            raise KeyError("Activo no disponible.")
+        resultado_activo = resultados[activo_nombre]
+        valor_esperado = Decimal(str(resultado_activo["esperado"])).quantize(Decimal('0.01'))
+    except Exception as exc:
+        logger.error("Error procesando inversión en wallet: %s", exc, exc_info=True)
+        messages.error(request, "No pudimos calcular la rentabilidad. Intenta más tarde.")
+        return redirect('simular')
+
+    ganancia = valor_esperado - amount
+
+    try:
+        with transaction.atomic():
+            wallet_locked = Wallet.objects.select_for_update().get(pk=wallet.pk)
+            if wallet_locked.balance < amount:
+                messages.error(request, "El saldo cambió y ya no es suficiente para invertir.")
+                return redirect('simular')
+            wallet_locked.balance = wallet_locked.balance - amount + valor_esperado
+            wallet_locked.save()
+            nuevo_saldo = wallet_locked.balance
+    except Exception as exc:
+        logger.error("Error actualizando wallet tras inversión: %s", exc, exc_info=True)
+        messages.error(request, "No pudimos actualizar tu wallet. Intenta nuevamente.")
+        return redirect('simular')
+
+    messages.success(
+        request,
+        (
+            f"Inversión en {activo_nombre} ejecutada. Resultado proyectado: "
+            f"${valor_esperado:,.2f} COP ({'+' if ganancia >= 0 else ''}{ganancia:,.2f}). "
+            f"Nuevo saldo en wallet: ${nuevo_saldo:,.2f} COP."
+        )
+    )
+    return redirect('simular')
+
+@login_required
 def historial(request):
     if getattr(request.user, "is_premium", False):
         kernel.K.activate_plugin("PremiumPlan")
@@ -452,3 +601,6 @@ def historial(request):
     except Exception as e:
         logger.error(f"Error invocando Lambda: {e}")
         return JsonResponse({"error": "Error invocando Lambda"}, status=500)
+    
+
+

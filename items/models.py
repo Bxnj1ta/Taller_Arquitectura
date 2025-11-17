@@ -1,7 +1,11 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils.html import strip_tags
+from decimal import Decimal
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -77,3 +81,29 @@ class Item(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.name}"
+
+
+from decimal import Decimal
+from django.conf import settings
+from django.db import models, transaction
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+User = get_user_model()
+
+class Wallet(models.Model):
+    """
+    Monedero/Wallet asociado a cada usuario.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+
+    def __str__(self):
+        return f"Wallet {self.user.username}: {self.balance}"
+
+@receiver(post_save, sender=User)
+def create_user_wallet(sender, instance, created, **kwargs):
+    # Crea wallet automáticamente al crear un usuario
+    if created:
+        Wallet.objects.create(user=instance)
