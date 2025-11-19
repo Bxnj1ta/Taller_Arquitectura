@@ -65,3 +65,47 @@ class TopUpForm(forms.Form):
                 raise forms.ValidationError("La tarjeta está expirada.")
 
         return cleaned_data
+
+
+class WithdrawForm(forms.Form):
+    """Formulario para retirar dinero del wallet."""
+    account_number = forms.CharField(
+        label="Número de cuenta bancaria",
+        max_length=20,
+        min_length=8,
+        widget=forms.TextInput(attrs={
+            "placeholder": "Ej: 1234567890",
+            "inputmode": "numeric"
+        })
+    )
+    account_type = forms.ChoiceField(
+        label="Tipo de cuenta",
+        choices=[
+            ("ahorros", "Cuenta de Ahorros"),
+            ("corriente", "Cuenta Corriente"),
+        ],
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+    bank_name = forms.CharField(
+        label="Banco",
+        max_length=100,
+        widget=forms.TextInput(attrs={"placeholder": "Ej: Bancolombia, Banco de Bogotá"})
+    )
+    amount = forms.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        min_value=Decimal('0.01'),
+        label="Monto a retirar",
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "placeholder": "0.00",
+            "min": "0.01"
+        })
+    )
+
+    def clean_account_number(self):
+        account = self.cleaned_data["account_number"]
+        # Solo permitir números
+        if not account.isdigit():
+            raise forms.ValidationError("El número de cuenta solo debe contener dígitos.")
+        return account

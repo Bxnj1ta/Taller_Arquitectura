@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirar Dinero - InvestSimulator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'top-up.css' %}">
+</head>
+<body>
+    <div class="topup-wrapper">
+        <div class="topup-header">
+            <h1>Retirar Dinero del Wallet</h1>
+            <a href="{% url 'simular' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Volver al dashboard
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="message-list">
+            {% for message in messages %}
+                <div class="message-item {{ message.tags }}">
+                    <i class="fas fa-info-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="topup-grid">
+            <section class="payment-card">
+                <h2>Información de la cuenta bancaria</h2>
+                <p>Ingresa los datos de tu cuenta bancaria para recibir el dinero retirado.</p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            {{ form.bank_name.label_tag }}
+                            {{ form.bank_name }}
+                            {% for error in form.bank_name.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group full-width">
+                            {{ form.account_number.label_tag }}
+                            {{ form.account_number }}
+                            {% for error in form.account_number.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.account_type.label_tag }}
+                            {{ form.account_type }}
+                            {% for error in form.account_type.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.amount.label_tag }}
+                            {{ form.amount }}
+                            {% for error in form.amount.errors %}
+                                <span class="helptext">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div class="message-item error">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>{{ error }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Procesar retiro
+                    </button>
+                </form>
+            </section>
+
+            <aside class="wallet-card">
+                <h2>Resumen del wallet</h2>
+                <div class="wallet-chip">
+                    <p>Saldo disponible</p>
+                    <div class="wallet-balance">${{ wallet.balance|floatformat:0 }}</div>
+                    <small>El saldo se actualizará después del retiro.</small>
+                </div>
+                <ul class="steps">
+                    <li><i class="fas fa-check-circle"></i> Verificamos el saldo disponible</li>
+                    <li><i class="fas fa-shield-alt"></i> Validamos los datos bancarios</li>
+                    <li><i class="fas fa-money-bill-wave"></i> Procesamos la transferencia</li>
+                </ul>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p><strong>Nota:</strong> El dinero será transferido a tu cuenta bancaria. El proceso puede tardar entre 1-3 días hábiles.</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+</body>
+</html>
+

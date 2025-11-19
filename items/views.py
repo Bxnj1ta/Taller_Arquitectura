@@ -22,7 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import F
-from .forms import TopUpForm
+from .forms import TopUpForm, WithdrawForm
 from .models import Wallet
 
 
@@ -169,6 +169,7 @@ def items_list_page(request):
         "pago_url": pago_url,
         "wallet_balance": wallet.balance,
         "top_up_url": reverse('top_up'),
+        "withdraw_url": reverse('withdraw'),
         "wallet_invest_url": reverse('wallet_invest'),
         "investment_options": [
             {"slug": "cdt", "label": "CDT Bancario", "descripcion": "Baja volatilidad, ingresos estables"},
@@ -583,6 +584,75 @@ def wallet_invest_view(request):
         )
     )
     return redirect('simular')
+
+
+@login_required
+def withdraw_view(request):
+    """
+    Permite al usuario retirar dinero de su wallet a una cuenta bancaria.
+    """
+    user = request.user
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        form = WithdrawForm(request.POST)
+        if form.is_valid():
+            amount = form.cleaned_data['amount']
+            
+            # Validar que el usuario tenga saldo suficiente
+            if wallet.balance < amount:
+                messages.error(request, f"No tienes saldo suficiente. Tu saldo actual es ${wallet.balance:,.2f} COP.")
+                form = WithdrawForm(request.POST)  # Mantener los datos ingresados
+            else:
+                try:
+                    with transaction.atomic():
+                        # Bloquear el wallet para evitar condiciones de carrera
+                        wallet_locked = Wallet.objects.select_for_update().get(pk=wallet.pk)
+                        
+                        # Verificar nuevamente el saldo después del bloqueo
+                        if wallet_locked.balance < amount:
+                            messages.error(request, "El saldo cambió y ya no es suficiente para este retiro.")
+                            return redirect('withdraw')
+                        
+                        # Descontar el monto del wallet
+                        wallet_locked.balance = F('balance') - amount
+                        wallet_locked.save()
+                        
+                        # Refrescar el objeto para obtener el nuevo balance
+                        wallet_locked.refresh_from_db()
+                        nuevo_saldo = wallet_locked.balance
+                    
+                    # Generar comprobante de retiro
+                    withdrawal_receipt = {
+                        "reference": f"RET-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        "account_number": form.cleaned_data["account_number"],
+                        "account_type": form.cleaned_data["account_type"],
+                        "bank_name": form.cleaned_data["bank_name"],
+                        "amount": amount,
+                        "new_balance": nuevo_saldo,
+                    }
+                    
+                    messages.success(
+                        request,
+                        f"Retiro de ${amount:,.2f} COP procesado exitosamente. "
+                        f"El dinero será transferido a la cuenta {form.cleaned_data['account_number']} "
+                        f"en {form.cleaned_data['bank_name']}. Nuevo saldo: ${nuevo_saldo:,.2f} COP."
+                    )
+                    logger.info(f"Usuario {user.email} retiró ${amount:,.2f} COP. Nuevo saldo: ${nuevo_saldo:,.2f}")
+                    return redirect('simular')
+                    
+                except Exception as e:
+                    logger.error(f"Error procesando retiro para {user.email}: {e}", exc_info=True)
+                    messages.error(request, f"Error al procesar el retiro: {e}")
+    else:
+        form = WithdrawForm()
+
+    context = {
+        'form': form,
+        'wallet': wallet,
+    }
+    return render(request, 'withdraw.html', context)
+
 
 @login_required
 def historial(request):

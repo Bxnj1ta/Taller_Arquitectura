@@ -187,6 +187,34 @@ body {
     border-color: rgba(229, 62, 62, 0.4);
 }
 
+.info-box {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.info-box i {
+    color: #60a5fa;
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+
+.info-box p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.info-box p strong {
+    color: #fff;
+}
+
 @media (max-width: 900px) {
     body {
         padding: 1rem;

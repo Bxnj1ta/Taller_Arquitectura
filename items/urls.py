@@ -6,4 +6,5 @@ urlpatterns = [
     path("api/simulaciones/", views.historial_simulaciones, name="api_simulaciones"),
     path('top-up/', views.top_up_view, name='top_up'),
     path('wallet-invest/', views.wallet_invest_view, name='wallet_invest'),
+    path('withdraw/', views.withdraw_view, name='withdraw'),
 ]
