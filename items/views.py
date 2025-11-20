@@ -320,8 +320,21 @@ def simular(request):
         logger.error(f"❌ Error en simulación para {request.user.email}: {e}", exc_info=True)
         return JsonResponse({"error": "Error procesando datos. Por favor intenta nuevamente."}, status=500)
 
-
 def _ejecutar_simulacion(monto, meses, activos):
+    try:
+        # NUEVO: Usar arquitectura hexagonal
+        from .hexagonal.application.use_cases.simulate_investment import SimulateInvestmentUseCase
+        
+        use_case = SimulateInvestmentUseCase()
+        return use_case.execute(monto, meses)
+        
+    except Exception as e:
+        # FALLBACK: implementación actual si hay error
+        logger.warning(f"Usando implementación legacy por error hexagonal: {e}")
+        return _ejecutar_simulacion_legacy(monto, meses, activos)
+
+
+def _ejecutar_simulacion_legacy(monto, meses, activos):
     """
     Versión SEGURA con límites estrictos y crecimiento realista
     """

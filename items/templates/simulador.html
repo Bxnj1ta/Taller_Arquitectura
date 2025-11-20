@@ -395,7 +395,14 @@
     }
 
     function formatPercentage(value) {
-        return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+        const numericValue = Number(value);
+
+        if (isNaN(numericValue)) {
+            console.warn('Valor no numérico para formato porcentaje:', value);
+            return '0.00%';
+        }
+        
+        return `${numericValue > 0 ? '+' : ''}${numericValue.toFixed(2)}%`;
     }
 
     // ===== DASHBOARD FUNCTIONALITY =====
@@ -625,6 +632,8 @@
         }
 
         updateMetricsCards(resultados) {
+            console.log("🔍 DEBUG - Datos recibidos en updateMetricsCards:", resultados);
+            
             const metrics = {
                 'CDT Bancario': { id: 'cdt', icon: 'fas fa-university', color: '#4CAF50' },
                 'S&P 500': { id: 'spy', icon: 'fas fa-chart-line', color: '#2196F3' },
@@ -639,9 +648,13 @@
                     const changeEl = document.getElementById(`${metric.id}-change`);
                     
                     if (valueEl && changeEl) {
+                        // ✅ Formatear valor esperado
                         valueEl.textContent = formatCurrency(valores.esperado);
-                        changeEl.textContent = formatPercentage(valores.ganancia_porcentaje);
-                        changeEl.className = `metric-change ${valores.ganancia_porcentaje >= 0 ? 'positive' : 'negative'}`;
+                        
+                        // ✅ Asegurar que ganancia_porcentaje sea numérico
+                        const gananciaPorcentaje = Number(valores.ganancia_porcentaje) || 0;
+                        changeEl.textContent = formatPercentage(gananciaPorcentaje);
+                        changeEl.className = `metric-change ${gananciaPorcentaje >= 0 ? 'positive' : 'negative'}`;
                     }
                 }
             });
@@ -834,7 +847,13 @@
 
             const values = entries.map(([, data]) => data);
             const total = values.reduce((acc, item) => acc + (item.esperado || 0), 0);
-            const average = values.reduce((acc, item) => acc + (item.ganancia_porcentaje || 0), 0) / values.length;
+            
+            // ✅ Asegurar que ganancia_porcentaje sea numérico
+            const average = values.reduce((acc, item) => {
+                const ganancia = Number(item.ganancia_porcentaje) || 0;
+                return acc + ganancia;
+            }, 0) / values.length;
+            
             const best = entries.reduce((prev, current) => {
                 return current[1].esperado > prev[1].esperado ? current : prev;
             }, entries[0]);
