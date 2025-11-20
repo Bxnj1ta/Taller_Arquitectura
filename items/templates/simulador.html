@@ -251,13 +251,6 @@
                             </div>
                             <canvas id="mainChart"></canvas>
                         </div>
-                        
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h3><i class="fas fa-percentage"></i> Rentabilidad vs CDT</h3>
-                            </div>
-                            <canvas id="comparisonChart"></canvas>
-                        </div>
                     </div>
 
                     <!-- Detailed Results -->
@@ -670,8 +663,6 @@
             // Main Chart
             this.createMainChart(labels, esperado, mejor, peor);
             
-            // Comparison Chart
-            this.createComparisonChart(labels, conveniencia);
         }
 
         createMainChart(labels, esperado, mejor, peor) {
@@ -748,55 +739,6 @@
             });
         }
 
-        createComparisonChart(labels, conveniencia) {
-            const ctx = document.getElementById("comparisonChart").getContext("2d");
-            
-            if (this.charts.comparison) {
-                this.charts.comparison.destroy();
-            }
-
-            this.charts.comparison = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: "Rentabilidad vs CDT",
-                        data: conveniencia,
-                        backgroundColor: conveniencia.map(val => 
-                            val >= 0 ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)'
-                        ),
-                        borderColor: conveniencia.map(val => 
-                            val >= 0 ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)'
-                        ),
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return formatPercentage(context.parsed.y) + ' vs CDT';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                callback: function(value) {
-                                    return formatPercentage(value);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         createDetailedCards(resultados) {
             const container = document.getElementById('detailed-cards');
             container.innerHTML = '';
@@ -840,24 +782,37 @@
         }
 
         updateResultsSummary(resultados) {
+            console.log("🔍 DEBUG - Datos para summary:", resultados);
+            
             const entries = Object.entries(resultados || {});
             if (!entries.length) {
                 return;
             }
 
-            const values = entries.map(([, data]) => data);
-            const total = values.reduce((acc, item) => acc + (item.esperado || 0), 0);
+            // ✅ CORREGIDO: Convertir todos los valores a números
+            const values = entries.map(([, data]) => ({
+                esperado: Number(data.esperado) || 0,
+                ganancia_porcentaje: Number(data.ganancia_porcentaje) || 0
+            }));
             
-            // ✅ Asegurar que ganancia_porcentaje sea numérico
-            const average = values.reduce((acc, item) => {
-                const ganancia = Number(item.ganancia_porcentaje) || 0;
-                return acc + ganancia;
-            }, 0) / values.length;
+            console.log("🔍 DEBUG - Valores convertidos:", values);
+
+            // ✅ CORREGIDO: Sumar números, no strings
+            const total = values.reduce((acc, item) => acc + item.esperado, 0);
             
+            // ✅ CORREGIDO: Calcular promedio correctamente
+            const average = values.reduce((acc, item) => acc + item.ganancia_porcentaje, 0) / values.length;
+            
+            // ✅ CORREGIDO: Encontrar el mejor activo comparando números
             const best = entries.reduce((prev, current) => {
-                return current[1].esperado > prev[1].esperado ? current : prev;
+                const prevValue = Number(prev[1].esperado) || 0;
+                const currentValue = Number(current[1].esperado) || 0;
+                return currentValue > prevValue ? current : prev;
             }, entries[0]);
 
+            console.log("🔍 DEBUG - Cálculos finales:", { total, average, best: best[0] });
+
+            // Actualizar la UI
             const totalEl = document.getElementById('results-total');
             if (totalEl) totalEl.textContent = formatCurrency(total);
 
@@ -868,7 +823,7 @@
             const bestValueEl = document.getElementById('results-best-value');
             if (bestAssetEl) bestAssetEl.textContent = best?.[0] ?? '-';
             if (bestValueEl) {
-                const bestValue = best?.[1]?.esperado ?? 0;
+                const bestValue = Number(best?.[1]?.esperado) || 0;
                 bestValueEl.textContent = formatCurrency(bestValue);
             }
         }
