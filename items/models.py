@@ -107,3 +107,52 @@ def create_user_wallet(sender, instance, created, **kwargs):
     # Crea wallet automáticamente al crear un usuario
     if created:
         Wallet.objects.create(user=instance)
+
+
+class Inversion(models.Model):
+    """
+    Modelo para rastrear inversiones activas de los usuarios.
+    """
+    TIPO_ACTIVO_CHOICES = [
+        ('cdt', 'CDT Bancario'),
+        ('sp500', 'S&P 500'),
+        ('btc', 'Cripto (BTC)'),
+        ('nft', 'NFTs'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('activa', 'Activa'),
+        ('finalizada', 'Finalizada'),
+        ('cancelada', 'Cancelada'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inversiones')
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='inversiones')
+    tipo_activo = models.CharField(max_length=10, choices=TIPO_ACTIVO_CHOICES)
+    monto_invertido = models.DecimalField(max_digits=14, decimal_places=2)
+    meses = models.IntegerField()
+    valor_esperado = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    ganancia_esperada = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    rentabilidad_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='activa')
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_finalizacion = models.DateTimeField(null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-fecha_inicio']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.get_tipo_activo_display()} - ${self.monto_invertido}"
+    
+    def calcular_fecha_vencimiento(self):
+        """Calcula la fecha de vencimiento basada en los meses"""
+        from datetime import timedelta
+        if self.meses and self.fecha_inicio:
+            return self.fecha_inicio + timedelta(days=self.meses * 30)
+        return None
+    
+    def save(self, *args, **kwargs):
+        if not self.fecha_vencimiento:
+            self.fecha_vencimiento = self.calcular_fecha_vencimiento()
+        super().save(*args, **kwargs)

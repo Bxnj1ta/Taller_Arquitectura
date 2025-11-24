@@ -95,13 +95,13 @@ class MarketDataService:
                 retorno_anual = (1 + retorno_mensual) ** 12 - 1
                 
                 if retorno_anual > 10:  # Más del 1000% anual
-                    print(f"   ❌ {activo}: Retorno anual del {retorno_anual*100:.0f}% - ¡COMPLETAMENTE IRREAL!")
+                    logger.warning(f"{activo}: Retorno anual del {retorno_anual*100:.0f}% - COMPLETAMENTE IRREAL")
                 elif retorno_anual > 1:  # Más del 100% anual  
-                    print(f"   ⚠️ {activo}: Retorno anual del {retorno_anual*100:.0f}% - Muy alto")
+                    logger.warning(f"{activo}: Retorno anual del {retorno_anual*100:.0f}% - Muy alto")
                 elif retorno_anual > 0.5:  # Más del 50% anual
-                    print(f"   📈 {activo}: Retorno anual del {retorno_anual*100:.0f}% - Alto pero posible")
+                    logger.info(f"{activo}: Retorno anual del {retorno_anual*100:.0f}% - Alto pero posible")
                 else:
-                    print(f"   ✅ {activo}: Retorno anual del {retorno_anual*100:.1f}% - Realista")
+                    logger.info(f"{activo}: Retorno anual del {retorno_anual*100:.1f}% - Realista")
 
     @classmethod
     def obtener_datos_completos(cls):
@@ -116,7 +116,7 @@ class MarketDataService:
                 "nfts": {"precios": list, "retorno": float, "volatilidad": float}
             }
         """
-        print("🔄 INICIANDO OBTENCIÓN DE DATOS DE MERCADO...")
+        logger.info("INICIANDO OBTENCION DE DATOS DE MERCADO...")
         
         # Verificar configuración primero
         cls._verificar_configuracion()
@@ -133,54 +133,39 @@ class MarketDataService:
     @classmethod
     def _verificar_configuracion(cls):
         """Verifica y muestra la configuración de APIs"""
-        print("🔧 CONFIGURACIÓN DE APIS:")
-        print(f"   Alpha Vantage: {'✅ Configurada' if cls.ALPHA_VANTAGE_KEY and cls.ALPHA_VANTAGE_KEY != 'demo' else '❌ No configurada'}")
-        print(f"   CoinGecko: {'✅ Configurada' if cls.COINGECKO_KEY else '❌ No configurada'}")
+        logger.info("CONFIGURACION DE APIS:")
+        alpha_status = "Configurada" if cls.ALPHA_VANTAGE_KEY and cls.ALPHA_VANTAGE_KEY != 'demo' else "No configurada"
+        coingecko_status = "Configurada" if cls.COINGECKO_KEY else "No configurada"
+        logger.info(f"   Alpha Vantage: {alpha_status}")
+        logger.info(f"   CoinGecko: {coingecko_status}")
 
     @classmethod
     def _obtener_tasa_cdt(cls):
-        """Obtiene la tasa DTF del Banco de la República"""
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json',
-            'Accept-Language': 'es-ES,es;q=0.9',
-        }
+        """Obtiene la tasa DTF del Banco de la República usando BanrepService"""
+        from .banrep_service import BanrepService
         
-        # Intentar endpoints de BanRep
-        for i, endpoint in enumerate(cls.BANREP_ENDPOINTS, 1):
-            try:
-                response = requests.get(endpoint, headers=headers, timeout=15)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    if data.get("Data") and len(data["Data"]) > 0:
-                        ultimo = data["Data"][-1]
-                        tasa_anual = float(ultimo["Valor"]) / 100.0
-                        periodo = ultimo.get("Periodo", "N/A")
-                        
-                        print(f"✅ DATOS REALES - Tasa DTF: {tasa_anual*100:.2f}% (período: {periodo})")
-                        return {
-                            "tasa": tasa_anual,
-                            "periodo": periodo,
-                            "fuente": "BanRep API"
-                        }
-                else:
-                    print(f"❌ API BanRep {i} falló - Status: {response.status_code}")
-            except Exception as e:
-                print(f"❌ API BanRep {i} error: {e}")
-                continue
-        
-        # Fallback a datos históricos
-        print("🔄 DATOS SIMULADOS - Usando tasa DTF histórica")
-        ultimo_mes = list(cls.TASAS_DTF_HISTORICAS.keys())[0]
-        tasa_anual = cls.TASAS_DTF_HISTORICAS[ultimo_mes] / 100.0
-        
-        return {
-            "tasa": tasa_anual,
-            "periodo": f"{ultimo_mes}-01",
-            "fuente": "Histórica"
-        }
+        try:
+            # Usar el servicio especializado de BanRep que tiene mejor manejo de errores
+            resultado = BanrepService.get_cdt_rate()
+            
+            # Convertir al formato esperado por market_service
+            return {
+                "tasa": resultado.get("tasa", 0.0925),
+                "periodo": resultado.get("periodo", "2025-01-01"),
+                "fuente": resultado.get("fuente", "historico")
+            }
+        except Exception as e:
+            logger.warning(f"Error obteniendo tasa CDT desde BanrepService: {e}")
+            # Fallback a datos históricos
+            logger.info("DATOS SIMULADOS - Usando tasa DTF historica")
+            ultimo_mes = list(cls.TASAS_DTF_HISTORICAS.keys())[0]
+            tasa_anual = cls.TASAS_DTF_HISTORICAS[ultimo_mes] / 100.0
+            
+            return {
+                "tasa": tasa_anual,
+                "periodo": f"{ultimo_mes}-01",
+                "fuente": "Histórica"
+            }
     
     @classmethod
     def _obtener_datos_sp500(cls):
@@ -538,11 +523,11 @@ def obtener_parametros_activos():
             }
         }
         
-        print("✅ Parámetros de activos calculados exitosamente")
+        logger.info("Parametros de activos calculados exitosamente")
         return activos
         
     except Exception as e:
-        print(f"❌ Error obteniendo parámetros de activos: {e}")
+        logger.error(f"Error obteniendo parametros de activos: {e}")
         
         # Valores por defecto seguros
         return {

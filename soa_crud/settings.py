@@ -23,6 +23,11 @@ LOGIN_REDIRECT_URL = '/simulador/'
 LOGOUT_REDIRECT_URL = '/login/'
 STATIC_URL = '/static/'
 
+# Archivos estáticos
+STATICFILES_DIRS = [
+    BASE_DIR / "items" / "static",
+]
+
 #HTTP y cookies seguras (API 8configuracionesinseguras)
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG

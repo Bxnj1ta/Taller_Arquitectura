@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- CSS del Dashboard -->
-    <link rel="stylesheet" href="../static/dashboard.css">
+    <link rel="stylesheet" href="{% static 'dashboard.css' %}?v=2.8">
 </head>
 <body>
     <div class="dashboard-layout">
@@ -254,7 +255,16 @@
                         
                         <div class="chart-container">
                             <div class="chart-header">
-                                <h3><i class="fas fa-percentage"></i> Rentabilidad vs CDT</h3>
+                                <h3>
+                                    <i class="fas fa-percentage"></i> 
+                                    <span>Rentabilidad vs </span>
+                                    <select id="comparison-asset-select" class="comparison-select">
+                                        <option value="CDT Bancario">CDT</option>
+                                        <option value="S&P 500">S&P 500</option>
+                                        <option value="Cripto (BTC)">Cripto</option>
+                                        <option value="NFTs">NFTs</option>
+                                    </select>
+                                </h3>
                             </div>
                             <canvas id="comparisonChart"></canvas>
                         </div>
@@ -272,26 +282,128 @@
 
             <!-- Other Sections (Placeholder) -->
             <section id="portfolio-section" class="dashboard-section">
-                <div class="coming-soon">
-                    <i class="fas fa-briefcase"></i>
-                    <h2>Portafolio</h2>
-                    <p>Próximamente: Gestión de portafolios de inversión</p>
+                <div class="section-header">
+                    <h2><i class="fas fa-briefcase"></i> Mi Portafolio</h2>
+                    <p>Gestión de tus inversiones activas</p>
+                </div>
+                
+                <div class="portfolio-container">
+                    <div class="portfolio-summary">
+                        <div class="summary-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Saldo Total</h3>
+                                <p class="summary-value" id="portfolio-total">{{ wallet_balance|default_if_none:"0"|floatformat:0 }} COP</p>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Rendimiento</h3>
+                                <p class="summary-value" id="portfolio-performance">--</p>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="summary-content">
+                                <h3>Inversiones Activas</h3>
+                                <p class="summary-value" id="portfolio-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="portfolio-investments">
+                        <h3><i class="fas fa-list"></i> Inversiones</h3>
+                        <div id="portfolio-investments-list" class="investments-list">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No tienes inversiones activas aún</p>
+                                <a href="#wallet-invest" class="btn-primary">Hacer primera inversión</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section id="analytics-section" class="dashboard-section">
-                <div class="coming-soon">
-                    <i class="fas fa-chart-bar"></i>
-                    <h2>Analíticas</h2>
-                    <p>Próximamente: Análisis avanzados y tendencias</p>
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Analíticas</h2>
+                    <p>Análisis avanzados y tendencias de tus simulaciones</p>
+                </div>
+                
+                <div class="analytics-container">
+                    <div class="analytics-filters">
+                        <select id="analytics-period" class="filter-select">
+                            <option value="all">Todo el tiempo</option>
+                            <option value="month">Último mes</option>
+                            <option value="3months">Últimos 3 meses</option>
+                            <option value="year">Último año</option>
+                        </select>
+                    </div>
+                    
+                    <div class="analytics-charts">
+                        <div class="analytics-chart-card">
+                            <h3><i class="fas fa-chart-line"></i> Evolución de Simulaciones</h3>
+                            <canvas id="analytics-timeline-chart"></canvas>
+                        </div>
+                        
+                        <div class="analytics-chart-card">
+                            <h3>
+                                <i class="fas fa-pie-chart"></i> Distribución 
+                                <span id="distribution-title">por Activo</span>
+                            </h3>
+                            <canvas id="analytics-distribution-chart"></canvas>
+                        </div>
+                        
+                        <div class="analytics-stats">
+                            <div class="stat-card">
+                                <h4>Total Simulado</h4>
+                                <p id="analytics-total-simulated">$0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Promedio por Simulación</h4>
+                                <p id="analytics-avg-simulation">$0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section id="history-section" class="dashboard-section">
-                <div class="coming-soon">
-                    <i class="fas fa-history"></i>
-                    <h2>Historial</h2>
-                    <p>Próximamente: Historial de simulaciones</p>
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Historial de Simulaciones</h2>
+                    <p>Revisa todas tus simulaciones anteriores</p>
+                </div>
+                
+                <div class="history-container">
+                    <div class="history-filters">
+                        <div class="history-filters-left">
+                            <button class="filter-btn active" data-filter="all">Todas</button>
+                            <button class="filter-btn" data-filter="recent">Recientes</button>
+                            <button class="filter-btn" data-filter="large">Mayores montos</button>
+                        </div>
+                        <div class="history-filters-right">
+                            <button class="btn-delete-all" id="delete-all-btn" title="Eliminar todas las simulaciones">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Eliminar Todas</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="history-list" class="history-list">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Cargando historial...</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -402,8 +514,27 @@
     class Dashboard {
         constructor() {
             this.currentChartType = 'bar';
-            this.charts = {};
+            this.charts = {
+                main: null,
+                comparison: null,
+                analyticsTimeline: null,
+                analyticsDistribution: null
+            };
             this.init();
+        }
+
+        // Métodos de utilidad como métodos de la clase
+        formatCurrency(value) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        formatPercentage(value) {
+            return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
         }
 
         init() {
@@ -412,6 +543,11 @@
             this.setupChartControls();
             this.setupMobileMenu();
             this.setupInputFormatting();
+            this.setupHistoryFilters();
+            this.setupComparisonAssetSelector();
+            this.allSimulaciones = []; // Almacenar todas las simulaciones para filtrado
+            this.currentResultados = null; // Almacenar resultados actuales para comparación
+            this.currentComparisonAsset = 'CDT Bancario'; // Activo de comparación por defecto
         }
 
         setupEventListeners() {
@@ -532,6 +668,18 @@
             });
         }
 
+        setupComparisonAssetSelector() {
+            const selector = document.getElementById('comparison-asset-select');
+            if (selector) {
+                selector.addEventListener('change', (e) => {
+                    this.currentComparisonAsset = e.target.value;
+                    if (this.currentResultados) {
+                        this.updateComparisonChart();
+                    }
+                });
+            }
+        }
+
         showSection(sectionName) {
             // Hide all sections
             document.querySelectorAll('.dashboard-section').forEach(section => {
@@ -540,6 +688,764 @@
             
             // Show selected section
             document.getElementById(`${sectionName}-section`).classList.add('active');
+            
+            // Load section-specific data
+            if (sectionName === 'history') {
+                this.loadHistory();
+            } else if (sectionName === 'portfolio') {
+                this.loadPortfolio();
+            } else if (sectionName === 'analytics') {
+                this.loadAnalytics();
+            }
+        }
+        
+        setupHistoryFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn[data-filter]');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const filter = btn.getAttribute('data-filter');
+                    
+                    // Actualizar estado activo
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Aplicar filtro
+                    this.applyHistoryFilter(filter);
+                });
+            });
+
+            // Botón eliminar todas
+            const deleteAllBtn = document.getElementById('delete-all-btn');
+            if (deleteAllBtn) {
+                deleteAllBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.deleteAllSimulations();
+                });
+            }
+        }
+
+        applyHistoryFilter(filterType) {
+            if (!this.allSimulaciones || this.allSimulaciones.length === 0) {
+                return;
+            }
+
+            let filtered = [...this.allSimulaciones];
+
+            switch(filterType) {
+                case 'recent':
+                    // Últimas 10 simulaciones
+                    filtered = filtered.slice(0, 10);
+                    break;
+                case 'large':
+                    // Ordenar por monto descendente y tomar las 10 mayores
+                    filtered = filtered
+                        .sort((a, b) => (b.monto || 0) - (a.monto || 0))
+                        .slice(0, 10);
+                    break;
+                case 'all':
+                default:
+                    // Mostrar todas (ya están ordenadas por fecha)
+                    break;
+            }
+
+            this.renderHistoryList(filtered);
+        }
+
+        renderHistoryList(simulaciones) {
+            const historyList = document.getElementById('history-list');
+            if (!historyList) return;
+
+            if (simulaciones.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay simulaciones que coincidan con el filtro</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = simulaciones.map(sim => {
+                const fecha = new Date(sim.creado || sim.creado_at || Date.now());
+                const fechaFormateada = fecha.toLocaleDateString('es-CO', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="history-item" data-sim-id="${sim.id || 0}">
+                        <div class="history-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="history-content">
+                            <h4>Simulación de ${this.formatCurrency(sim.monto || 0)}</h4>
+                            <p class="history-meta">
+                                <i class="fas fa-calendar"></i> ${fechaFormateada}
+                            </p>
+                        </div>
+                        <div class="history-actions">
+                            <button class="btn-icon" onclick="window.dashboard.viewSimulation(${sim.id || 0})" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon btn-icon-delete" onclick="window.dashboard.deleteSimulation(${sim.id || 0})" title="Eliminar simulación">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async loadHistory() {
+            const historyList = document.getElementById('history-list');
+            
+            if (!historyList) {
+                console.error('Elemento history-list no encontrado en el DOM');
+                return;
+            }
+            
+            historyList.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Cargando historial...</p></div>';
+            
+            try {
+                const response = await fetch('/api/simulaciones/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const simulaciones = await response.json();
+                
+                if (!Array.isArray(simulaciones)) {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+                
+                // Guardar todas las simulaciones para filtrado
+                this.allSimulaciones = simulaciones;
+                
+                if (simulaciones.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No tienes simulaciones guardadas aún</p>
+                            <p class="empty-hint">Realiza tu primera simulación para verla aquí</p>
+                        </div>
+                    `;
+                    // Ocultar botón eliminar todas si no hay simulaciones
+                    const deleteAllBtn = document.getElementById('delete-all-btn');
+                    if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+                    return;
+                }
+
+                // Mostrar botón eliminar todas si hay simulaciones
+                const deleteAllBtn = document.getElementById('delete-all-btn');
+                if (deleteAllBtn) {
+                    deleteAllBtn.style.display = 'flex';
+                    deleteAllBtn.style.visibility = 'visible';
+                }
+                
+                // Obtener filtro activo
+                const activeFilter = document.querySelector('.filter-btn.active')?.getAttribute('data-filter') || 'all';
+                this.applyHistoryFilter(activeFilter);
+                
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+                historyList.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar el historial</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #94a3b8;">${error.message || 'Intenta recargar la página'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async deleteSimulation(simulacionId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta simulación? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/simulaciones/${simulacionId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Remover del array de simulaciones
+                    this.allSimulaciones = this.allSimulaciones.filter(sim => sim.id !== simulacionId);
+                    
+                    // Si ya no hay simulaciones, ocultar botón eliminar todas
+                    if (this.allSimulaciones.length === 0) {
+                        const deleteAllBtn = document.getElementById('delete-all-btn');
+                        if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+                    }
+                    
+                    // Recargar la lista
+                    const activeFilter = document.querySelector('.filter-btn.active')?.getAttribute('data-filter') || 'all';
+                    this.applyHistoryFilter(activeFilter);
+                    
+                    // Mostrar mensaje de éxito
+                    this.showSuccessMessage('Simulación eliminada correctamente');
+                } else {
+                    throw new Error(data.error || 'Error al eliminar la simulación');
+                }
+            } catch (error) {
+                console.error('Error eliminando simulación:', error);
+                alert('Error al eliminar la simulación: ' + error.message);
+            }
+        }
+
+        async deleteAllSimulations() {
+            const count = this.allSimulaciones?.length || 0;
+            if (count === 0) {
+                alert('No hay simulaciones para eliminar');
+                return;
+            }
+
+            if (!confirm(`¿Estás seguro de que deseas eliminar TODAS las ${count} simulaciones? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/simulaciones/todas/', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Limpiar el array
+                    this.allSimulaciones = [];
+                    
+                    // Recargar la lista
+                    this.loadHistory();
+                    
+                    // Ocultar botón eliminar todas
+                    const deleteAllBtn = document.getElementById('delete-all-btn');
+                    if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+                    
+                    // Mostrar mensaje de éxito
+                    this.showSuccessMessage(`Se eliminaron ${data.count || count} simulaciones correctamente`);
+                } else {
+                    throw new Error(data.error || 'Error al eliminar las simulaciones');
+                }
+            } catch (error) {
+                console.error('Error eliminando todas las simulaciones:', error);
+                alert('Error al eliminar las simulaciones: ' + error.message);
+            }
+        }
+
+        showSuccessMessage(message) {
+            // Crear notificación temporal de éxito
+            const notification = document.createElement('div');
+            notification.className = 'success-notification';
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+            
+            // Animar entrada
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        async loadPortfolio() {
+            const portfolioTotal = document.getElementById('portfolio-total');
+            const portfolioPerformance = document.getElementById('portfolio-performance');
+            const portfolioCount = document.getElementById('portfolio-count');
+            const investmentsList = document.getElementById('portfolio-investments-list');
+            
+            if (!portfolioTotal || !portfolioPerformance || !portfolioCount || !investmentsList) {
+                console.error('Elementos del portafolio no encontrados en el DOM');
+                return;
+            }
+            
+            // Mostrar loading en todos los elementos
+            investmentsList.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Cargando portafolio...</p></div>';
+            if (portfolioTotal) portfolioTotal.textContent = '...';
+            if (portfolioCount) portfolioCount.textContent = '...';
+            if (portfolioPerformance) portfolioPerformance.textContent = '...';
+            
+            try {
+                const response = await fetch('/api/portafolio/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                console.log('Datos del portafolio recibidos:', data);
+                
+                // Actualizar resumen
+                const saldoTotal = data.saldo_total || data.wallet_balance || 0;
+                if (portfolioTotal) {
+                    portfolioTotal.textContent = this.formatCurrency(saldoTotal);
+                }
+                
+                const inversionesActivas = data.inversiones_activas !== undefined 
+                    ? data.inversiones_activas 
+                    : (data.inversiones && Array.isArray(data.inversiones) ? data.inversiones.length : 0);
+                
+                if (portfolioCount) {
+                    portfolioCount.textContent = inversionesActivas;
+                }
+                
+                // Actualizar rendimiento
+                let rendimientoPorcentaje = 0;
+                if (data.rendimiento_porcentaje !== undefined && data.rendimiento_porcentaje !== null) {
+                    rendimientoPorcentaje = Number(data.rendimiento_porcentaje);
+                } else if (data.total_invertido && data.total_invertido > 0 && data.rendimiento_total !== undefined) {
+                    // Calcular rendimiento si no viene directamente
+                    rendimientoPorcentaje = (data.rendimiento_total / data.total_invertido) * 100;
+                }
+                
+                if (portfolioPerformance) {
+                    if (rendimientoPorcentaje !== 0 || inversionesActivas > 0) {
+                        const rendimiento = rendimientoPorcentaje >= 0 
+                            ? `+${rendimientoPorcentaje.toFixed(2)}%`
+                            : `${rendimientoPorcentaje.toFixed(2)}%`;
+                        portfolioPerformance.textContent = rendimiento;
+                        portfolioPerformance.className = `summary-value ${rendimientoPorcentaje >= 0 ? 'positive' : 'negative'}`;
+                    } else {
+                        portfolioPerformance.textContent = '0%';
+                        portfolioPerformance.className = 'summary-value';
+                    }
+                }
+                
+                // Mostrar inversiones activas
+                if (data.inversiones && Array.isArray(data.inversiones) && data.inversiones.length > 0) {
+                    investmentsList.innerHTML = data.inversiones.map(inv => {
+                        // Mapeo de iconos por código y nombre
+                        const iconMap = {
+                            'cdt': 'fas fa-university',
+                            'CDT Bancario': 'fas fa-university',
+                            'sp500': 'fas fa-chart-line',
+                            'S&P 500': 'fas fa-chart-line',
+                            'btc': 'fab fa-bitcoin',
+                            'Cripto (BTC)': 'fab fa-bitcoin',
+                            'nft': 'fas fa-palette',
+                            'NFTs': 'fas fa-palette'
+                        };
+                        // Obtener el tipo de activo (priorizar nombre completo, luego código)
+                        const tipoActivoNombre = inv.tipo_activo || '';
+                        const tipoActivoCodigo = inv.tipo_activo_codigo || '';
+                        const icon = iconMap[tipoActivoNombre] || iconMap[tipoActivoCodigo] || 'fas fa-chart-bar';
+                        
+                        // Calcular rentabilidad si no viene
+                        let rentabilidad = 0;
+                        if (inv.rentabilidad_porcentaje !== undefined && inv.rentabilidad_porcentaje !== null) {
+                            rentabilidad = Number(inv.rentabilidad_porcentaje);
+                        } else if (inv.monto_invertido && inv.monto_invertido > 0 && inv.valor_esperado) {
+                            // Calcular rentabilidad basada en ganancia esperada
+                            const ganancia = inv.valor_esperado - inv.monto_invertido;
+                            rentabilidad = (ganancia / inv.monto_invertido) * 100;
+                        }
+                        
+                        const rendimiento = rentabilidad >= 0
+                            ? `+${rentabilidad.toFixed(2)}%`
+                            : `${rentabilidad.toFixed(2)}%`;
+                        
+                        const fechaVenc = inv.fecha_vencimiento 
+                            ? new Date(inv.fecha_vencimiento).toLocaleDateString('es-CO', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })
+                            : 'N/A';
+                        
+                        const fechaInicio = inv.fecha_inicio 
+                            ? new Date(inv.fecha_inicio).toLocaleDateString('es-CO', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })
+                            : 'N/A';
+                        
+                        return `
+                            <div class="investment-item">
+                                <div class="investment-icon">
+                                    <i class="${icon}"></i>
+                                </div>
+                                <div class="investment-content">
+                                    <h4>${tipoActivoNombre || tipoActivoCodigo || 'Sin nombre'}</h4>
+                                    <p class="investment-meta">
+                                        <strong>Invertido:</strong> ${this.formatCurrency(inv.monto_invertido || 0)} COP
+                                        ${inv.valor_esperado ? `<br><strong>Valor esperado:</strong> ${this.formatCurrency(inv.valor_esperado)} COP` : ''}
+                                    </p>
+                                    <p class="investment-details">
+                                        <span class="rentability ${rentabilidad >= 0 ? 'positive' : 'negative'}">
+                                            ${rendimiento}
+                                        </span>
+                                        <span class="separator">•</span>
+                                        ${inv.meses || 0} meses
+                                        <span class="separator">•</span>
+                                        Inicio: ${fechaInicio}
+                                        <span class="separator">•</span>
+                                        Vence: ${fechaVenc}
+                                    </p>
+                                </div>
+                                <div class="investment-actions">
+                                    <span class="status-badge active">Activa</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    investmentsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No tienes inversiones activas aún</p>
+                            <a href="#wallet-invest" class="btn-primary">Hacer primera inversión</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error cargando portafolio:', error);
+                
+                // Actualizar elementos de resumen en caso de error
+                if (portfolioTotal) portfolioTotal.textContent = 'Error';
+                if (portfolioCount) portfolioCount.textContent = '--';
+                if (portfolioPerformance) {
+                    portfolioPerformance.textContent = '--';
+                    portfolioPerformance.className = 'summary-value';
+                }
+                
+                investmentsList.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar el portafolio</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #94a3b8;">${error.message || 'Intenta recargar la página'}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async loadAnalytics() {
+            const totalSimulatedEl = document.getElementById('analytics-total-simulated');
+            const avgSimulationEl = document.getElementById('analytics-avg-simulation');
+            const timelineChartEl = document.getElementById('analytics-timeline-chart');
+            const distributionChartEl = document.getElementById('analytics-distribution-chart');
+            
+            try {
+                const response = await fetch('/api/analytics/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Actualizar estadísticas
+                if (totalSimulatedEl) {
+                    totalSimulatedEl.textContent = this.formatCurrency(data.total_simulado || 0);
+                }
+                if (avgSimulationEl) {
+                    avgSimulationEl.textContent = this.formatCurrency(data.promedio_simulacion || 0);
+                }
+                
+                // Destruir gráficos anteriores si existen
+                if (this.charts.analyticsTimeline) {
+                    this.charts.analyticsTimeline.destroy();
+                }
+                if (this.charts.analyticsDistribution) {
+                    this.charts.analyticsDistribution.destroy();
+                }
+                
+                // Convertir distribución de activos al formato correcto
+                let distribucion = {};
+                
+                // Priorizar distribución de inversiones, si no hay, usar distribución de simulaciones
+                if (data.distribucion_activos && Object.keys(data.distribucion_activos).length > 0) {
+                    // Hay inversiones, usar distribución por activo
+                    Object.keys(data.distribucion_activos).forEach(key => {
+                        const value = data.distribucion_activos[key];
+                        distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
+                    });
+                } else if (data.distribucion_simulaciones && Object.keys(data.distribucion_simulaciones).length > 0) {
+                    // No hay inversiones, usar distribución de simulaciones por rango
+                    Object.keys(data.distribucion_simulaciones).forEach(key => {
+                        const value = data.distribucion_simulaciones[key];
+                        distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
+                    });
+                }
+                
+                // Crear gráfico de timeline si hay datos
+                const hasTimeline = data.simulaciones_timeline && data.simulaciones_timeline.length > 0;
+                const hasDistribution = distribucion && Object.keys(distribucion).length > 0;
+                
+                if (hasTimeline || hasDistribution) {
+                    this.createAnalyticsCharts(
+                        hasTimeline ? data.simulaciones_timeline : null, 
+                        hasDistribution ? distribucion : null
+                    );
+                } else {
+                    // Mostrar estado vacío
+                    const timelineParent = timelineChartEl ? timelineChartEl.parentElement : null;
+                    const distParent = distributionChartEl ? distributionChartEl.parentElement : null;
+                    if (timelineParent) {
+                        timelineParent.innerHTML = '<div class="empty-state"><p>No hay datos suficientes para mostrar gráficos</p></div>';
+                    }
+                    if (distParent) {
+                        distParent.innerHTML = '<div class="empty-state"><p>No hay datos suficientes para mostrar gráficos</p></div>';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error cargando analíticas:', error);
+                
+                // Mostrar error en estadísticas
+                if (totalSimulatedEl) totalSimulatedEl.textContent = 'Error';
+                if (avgSimulationEl) avgSimulationEl.textContent = 'Error';
+                
+                // Mostrar error en gráficos
+                const timelineParent = timelineChartEl ? timelineChartEl.parentElement : null;
+                const distParent = distributionChartEl ? distributionChartEl.parentElement : null;
+                if (timelineParent) {
+                    timelineParent.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Error al cargar gráfico</p>
+                        </div>
+                    `;
+                }
+                if (distParent) {
+                    distParent.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Error al cargar gráfico</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        createAnalyticsCharts(simulacionesTimeline, distribucionActivos) {
+            // Gráfico de línea temporal
+            const timelineCtx = document.getElementById('analytics-timeline-chart');
+            const timelineParent = timelineCtx ? timelineCtx.parentElement : null;
+            
+            if (simulacionesTimeline && simulacionesTimeline.length > 0) {
+                // Restaurar el canvas si fue reemplazado por un mensaje vacío
+                if (timelineParent && !timelineCtx) {
+                    timelineParent.innerHTML = '<canvas id="analytics-timeline-chart"></canvas>';
+                    const newCtx = document.getElementById('analytics-timeline-chart');
+                    if (newCtx) {
+                        const labels = simulacionesTimeline.map(s => {
+                            const date = new Date(s.fecha);
+                            return date.toLocaleDateString('es-CO', { month: 'short', day: 'numeric' });
+                        });
+                        const montos = simulacionesTimeline.map(s => s.monto);
+                        
+                        this.charts.analyticsTimeline = new Chart(newCtx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Monto Simulado',
+                                    data: montos,
+                                    borderColor: 'rgb(102, 126, 234)',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (context) => this.formatCurrency(context.parsed.y)
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: (value) => this.formatCurrency(value)
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } else if (timelineCtx) {
+                    const labels = simulacionesTimeline.map(s => {
+                        const date = new Date(s.fecha);
+                        return date.toLocaleDateString('es-CO', { month: 'short', day: 'numeric' });
+                    });
+                    const montos = simulacionesTimeline.map(s => s.monto);
+                    
+                    this.charts.analyticsTimeline = new Chart(timelineCtx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Monto Simulado',
+                                data: montos,
+                                borderColor: 'rgb(102, 126, 234)',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => this.formatCurrency(context.parsed.y)
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => this.formatCurrency(value)
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                // Mostrar mensaje vacío si no hay timeline
+                if (timelineParent) {
+                    timelineParent.innerHTML = '<div class="empty-state"><p>No hay simulaciones para mostrar</p></div>';
+                }
+            }
+            
+            // Gráfico de distribución por activo
+            const distCtx = document.getElementById('analytics-distribution-chart');
+            const distParent = distCtx ? distCtx.parentElement : null;
+            const distTitleEl = document.getElementById('distribution-title');
+            
+            // Determinar si es distribución de inversiones o simulaciones
+            const isInversiones = distribucionActivos && Object.keys(distribucionActivos).some(key => 
+                ['CDT Bancario', 'S&P 500', 'Cripto (BTC)', 'NFTs'].includes(key)
+            );
+            
+            if (distribucionActivos && Object.keys(distribucionActivos).length > 0) {
+                // Actualizar título
+                if (distTitleEl) {
+                    distTitleEl.textContent = isInversiones ? 'por Activo' : 'por Monto Simulado';
+                }
+                
+                // Restaurar el canvas si fue reemplazado por un mensaje vacío
+                if (distParent && !distCtx) {
+                    const titleText = distTitleEl ? distTitleEl.textContent : 'por Activo';
+                    distParent.innerHTML = `
+                        <h3><i class="fas fa-pie-chart"></i> Distribución 
+                            <span id="distribution-title">${titleText}</span>
+                        </h3>
+                        <canvas id="analytics-distribution-chart"></canvas>
+                    `;
+                }
+                
+                const currentDistCtx = document.getElementById('analytics-distribution-chart');
+                if (!currentDistCtx) return;
+                
+                const labels = Object.keys(distribucionActivos);
+                // Manejar tanto objetos como valores numéricos
+                const data = Object.values(distribucionActivos).map(d => {
+                    if (typeof d === 'object' && d !== null) {
+                        return d.monto_total || d.cantidad || 0;
+                    }
+                    return typeof d === 'number' ? d : 0;
+                });
+                const colors = [
+                    'rgba(102, 126, 234, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 205, 86, 0.8)'
+                ];
+                
+                this.charts.analyticsDistribution = new Chart(currentDistCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Cantidad de Inversiones',
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length)
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        // Intentar obtener el monto total del objeto distribucionActivos
+                                        const distribucionItem = distribucionActivos[label];
+                                        if (distribucionItem && typeof distribucionItem === 'object') {
+                                            const total = distribucionItem.monto_total || distribucionItem.cantidad || value;
+                                            return `${label}: ${this.formatCurrency(total)}`;
+                                        }
+                                        return `${label}: ${this.formatCurrency(value)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Mostrar mensaje vacío si no hay distribución
+                if (distParent) {
+                    distParent.innerHTML = '<div class="empty-state"><p>No hay datos para mostrar distribución</p></div>';
+                }
+            }
+        }
+        
+        viewSimulation(id) {
+            // Redirigir o mostrar detalles de la simulación
+            alert(`Ver detalles de simulación ${id}`);
+            // TODO: Implementar vista de detalles
         }
 
         switchChartType(type) {
@@ -652,13 +1558,36 @@
             const esperado = labels.map(a => resultados[a].esperado);
             const mejor = labels.map(a => resultados[a].mejor);
             const peor = labels.map(a => resultados[a].peor);
-            const conveniencia = labels.map(a => resultados[a].conveniencia_vs_cdt);
+
+            // Guardar resultados para poder actualizar la comparación
+            this.currentResultados = resultados;
 
             // Main Chart
             this.createMainChart(labels, esperado, mejor, peor);
             
             // Comparison Chart
-            this.createComparisonChart(labels, conveniencia);
+            this.updateComparisonChart();
+        }
+
+        updateComparisonChart() {
+            if (!this.currentResultados) return;
+
+            const labels = Object.keys(this.currentResultados);
+            const comparisonAsset = this.currentComparisonAsset || 'CDT Bancario';
+            
+            // Obtener el valor esperado del activo de comparación
+            const baseValue = this.currentResultados[comparisonAsset]?.esperado || 0;
+            
+                // Calcular la diferencia porcentual respecto al activo base
+            const conveniencia = labels.map(activo => {
+                const activoValue = this.currentResultados[activo].esperado;
+                if (baseValue === 0 || activoValue === 0) return 0;
+                // Calcular diferencia porcentual: ((valor_activo - valor_base) / valor_base) * 100
+                const diff = ((activoValue - baseValue) / baseValue) * 100;
+                return Math.round(diff * 100) / 100; // Redondear a 2 decimales
+            });
+
+            this.createComparisonChart(labels, conveniencia, comparisonAsset);
         }
 
         createMainChart(labels, esperado, mejor, peor) {
@@ -735,19 +1664,28 @@
             });
         }
 
-        createComparisonChart(labels, conveniencia) {
+        createComparisonChart(labels, conveniencia, comparisonAsset = 'CDT Bancario') {
             const ctx = document.getElementById("comparisonChart").getContext("2d");
             
             if (this.charts.comparison) {
                 this.charts.comparison.destroy();
             }
 
+            // Obtener nombre corto del activo de comparación
+            const assetNames = {
+                'CDT Bancario': 'CDT',
+                'S&P 500': 'S&P 500',
+                'Cripto (BTC)': 'Cripto',
+                'NFTs': 'NFTs'
+            };
+            const assetShortName = assetNames[comparisonAsset] || comparisonAsset;
+
             this.charts.comparison = new Chart(ctx, {
                 type: "bar",
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: "Rentabilidad vs CDT",
+                        label: `Rentabilidad vs ${assetShortName}`,
                         data: conveniencia,
                         backgroundColor: conveniencia.map(val => 
                             val >= 0 ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)'
@@ -765,17 +1703,18 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    return formatPercentage(context.parsed.y) + ' vs CDT';
+                                label: (context) => {
+                                    return this.formatPercentage(context.parsed.y) + ` vs ${assetShortName}`;
                                 }
                             }
                         }
                     },
                     scales: {
                         y: {
+                            beginAtZero: false,
                             ticks: {
-                                callback: function(value) {
-                                    return formatPercentage(value);
+                                callback: (value) => {
+                                    return this.formatPercentage(value);
                                 }
                             }
                         }
@@ -789,6 +1728,7 @@
             container.innerHTML = '';
 
             Object.entries(resultados).forEach(([activo, valores]) => {
+                const recomendacion = this.generateRecommendation(activo, valores, resultados);
                 const card = document.createElement('div');
                 card.className = 'detailed-card';
                 card.innerHTML = `
@@ -819,11 +1759,80 @@
                         </div>
                     </div>
                     <div class="card-recommendation">
-                        <p><strong>Recomendación:</strong> ${valores.recomendacion}</p>
+                        <p><strong>Recomendación:</strong> ${recomendacion}</p>
                     </div>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        generateRecommendation(activo, valores, todosResultados) {
+            const ganancia = valores.ganancia_porcentaje;
+            const esperado = valores.esperado;
+            const mejor = valores.mejor;
+            const peor = valores.peor;
+            
+            // Encontrar el mejor y peor activo por ganancia
+            const activosOrdenados = Object.entries(todosResultados)
+                .sort((a, b) => b[1].ganancia_porcentaje - a[1].ganancia_porcentaje);
+            const mejorActivo = activosOrdenados[0][0];
+            const peorActivo = activosOrdenados[activosOrdenados.length - 1][0];
+            
+            // Calcular rango de riesgo (diferencia entre mejor y peor caso)
+            const rangoRiesgo = ((mejor - peor) / esperado) * 100;
+            
+            let recomendacion = '';
+            
+            // Recomendaciones basadas en el tipo de activo
+            if (activo === 'CDT Bancario') {
+                if (ganancia >= 10) {
+                    recomendacion = 'Excelente opción para inversión conservadora. Ofrece rentabilidad estable y segura, ideal para proteger capital con retornos moderados.';
+                } else if (ganancia >= 8) {
+                    recomendacion = 'Buena opción conservadora. Rentabilidad predecible y baja volatilidad, adecuada para inversores que buscan estabilidad.';
+                } else {
+                    recomendacion = 'Opción conservadora con retornos modestos. Considera diversificar parte del capital en activos con mayor potencial de crecimiento.';
+                }
+            } else if (activo === 'S&P 500') {
+                if (ganancia >= 20) {
+                    recomendacion = 'Oportunidad atractiva para crecimiento a mediano plazo. El índice histórico muestra rendimientos consistentes, ideal para diversificación.';
+                } else if (ganancia >= 15) {
+                    recomendacion = 'Buena opción para crecimiento moderado. Recomendado para inversores con tolerancia al riesgo medio y horizonte de inversión a largo plazo.';
+                } else if (rangoRiesgo > 50) {
+                    recomendacion = 'Moderado riesgo-rendimiento. Considera un horizonte de inversión de al menos 5 años para mitigar volatilidad a corto plazo.';
+                } else {
+                    recomendacion = 'Rendimiento por debajo del promedio histórico. Revisa otras opciones o espera mejores condiciones de mercado.';
+                }
+            } else if (activo === 'Cripto (BTC)') {
+                if (ganancia >= 100) {
+                    recomendacion = 'Alto potencial de retorno pero con riesgo extremo. Solo invierte lo que estés dispuesto a perder. Recomendado para cartera diversificada.';
+                } else if (ganancia >= 50) {
+                    recomendacion = 'Alto riesgo y alta volatilidad. Considera una posición pequeña (5-10% del portafolio) y mantén un horizonte de inversión largo.';
+                } else if (rangoRiesgo > 80) {
+                    recomendacion = 'Extrema volatilidad detectada. Este activo puede experimentar grandes fluctuaciones. Inversión solo para perfiles de riesgo alto.';
+                } else {
+                    recomendacion = 'Retornos por debajo del potencial histórico. Considera esperar mejores condiciones o reducir exposición.';
+                }
+            } else if (activo === 'NFTs') {
+                if (ganancia >= 50) {
+                    recomendacion = 'Máximo potencial de retorno pero riesgo muy alto. Mercado altamente especulativo. Inversión solo para expertos o capital que puedas permitirte perder.';
+                } else if (ganancia >= 30) {
+                    recomendacion = 'Alto riesgo especulativo. Este mercado es altamente volátil e impredecible. Limita la exposición a menos del 5% del portafolio total.';
+                } else if (rangoRiesgo > 100) {
+                    recomendacion = 'Volatilidad extrema. Pérdidas significativas son posibles. Recomendado solo para inversores experimentados con alta tolerancia al riesgo.';
+                } else {
+                    recomendacion = 'Retornos modestos con alto riesgo. Considera otras opciones con mejor relación riesgo-rendimiento.';
+                }
+            }
+            
+            // Añadir comparación con el mejor activo
+            if (activo !== mejorActivo && ganancia < todosResultados[mejorActivo].ganancia_porcentaje) {
+                const diferencia = todosResultados[mejorActivo].ganancia_porcentaje - ganancia;
+                if (diferencia > 20) {
+                    recomendacion += ` Nota: ${mejorActivo} muestra ${diferencia.toFixed(2)}% más de potencial.`;
+                }
+            }
+            
+            return recomendacion || 'Evalúa cuidadosamente según tu perfil de riesgo y horizonte de inversión.';
         }
 
         updateResultsSummary(resultados) {
@@ -891,7 +1900,8 @@
 
     // Initialize dashboard when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-        const dashboard = new Dashboard();
+        window.dashboard = new Dashboard();
+        const dashboard = window.dashboard;
         
         // Agregar animaciones de entrada
         setTimeout(() => {
