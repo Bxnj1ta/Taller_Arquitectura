@@ -33,6 +33,10 @@
                     <i class="fas fa-calculator"></i>
                     <span>Simulador</span>
                 </a>
+                <a href="#" class="nav-item" data-section="invest">
+                    <i class="fas fa-seedling"></i>
+                    <span>Invertir</span>
+                </a>
                 <a href="#" class="nav-item" data-section="portfolio">
                     <i class="fas fa-briefcase"></i>
                     <span>Portafolio</span>
@@ -95,7 +99,7 @@
                                 <i class="fas fa-money-bill-wave"></i>
                                 <span>Retirar</span>
                             </a>
-                            <a href="#wallet-invest" class="wallet-btn secondary">
+                            <a href="#" class="wallet-btn secondary" onclick="window.dashboard.showSection('invest'); return false;">
                                 <i class="fas fa-seedling"></i>
                                 <span>Invertir</span>
                             </a>
@@ -326,7 +330,7 @@
                             <div class="empty-state">
                                 <i class="fas fa-inbox"></i>
                                 <p>No tienes inversiones activas aún</p>
-                                <a href="#wallet-invest" class="btn-primary">Hacer primera inversión</a>
+                                <a href="#" class="btn-primary" onclick="window.dashboard.showSection('invest'); return false;">Hacer primera inversión</a>
                             </div>
                         </div>
                     </div>
@@ -341,6 +345,16 @@
                 
                 <div class="analytics-container">
                     <div class="analytics-filters">
+                        <div class="analytics-type-tabs">
+                            <button class="analytics-tab-btn active" data-type="simulaciones">
+                                <i class="fas fa-calculator"></i>
+                                Simulaciones
+                            </button>
+                            <button class="analytics-tab-btn" data-type="inversiones">
+                                <i class="fas fa-wallet"></i>
+                                Inversiones del Wallet
+                            </button>
+                        </div>
                         <select id="analytics-period" class="filter-select">
                             <option value="all">Todo el tiempo</option>
                             <option value="month">Último mes</option>
@@ -379,11 +393,22 @@
 
             <section id="history-section" class="dashboard-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-history"></i> Historial de Simulaciones</h2>
-                    <p>Revisa todas tus simulaciones anteriores</p>
+                    <h2><i class="fas fa-history"></i> Historial</h2>
+                    <p>Revisa todas tus simulaciones e inversiones anteriores</p>
                 </div>
                 
                 <div class="history-container">
+                    <div class="history-type-tabs">
+                        <button class="history-tab-btn active" data-type="simulaciones">
+                            <i class="fas fa-calculator"></i>
+                            Simulaciones
+                        </button>
+                        <button class="history-tab-btn" data-type="inversiones">
+                            <i class="fas fa-wallet"></i>
+                            Inversiones del Wallet
+                        </button>
+                    </div>
+                    
                     <div class="history-filters">
                         <div class="history-filters-left">
                             <button class="filter-btn active" data-filter="all">Todas</button>
@@ -391,7 +416,7 @@
                             <button class="filter-btn" data-filter="large">Mayores montos</button>
                         </div>
                         <div class="history-filters-right">
-                            <button class="btn-delete-all" id="delete-all-btn" title="Eliminar todas las simulaciones">
+                            <button class="btn-delete-all" id="delete-all-btn" title="Eliminar todas las simulaciones" style="display: none;">
                                 <i class="fas fa-trash-alt"></i>
                                 <span>Eliminar Todas</span>
                             </button>
@@ -407,16 +432,22 @@
                 </div>
             </section>
 
-            <div class="wallet-actions" id="wallet-invest">
-                <section class="investment-card">
-                    <div class="panel-header">
-                        <h2>
-                            <i class="fas fa-piggy-bank"></i>
-                            Invertir desde tu wallet
-                        </h2>
-                        <p>Después de analizar los escenarios, elige dónde quieres invertir tu saldo.</p>
-                    </div>
-                    <form method="post" action="{{ wallet_invest_url }}" class="investment-form">
+            <section id="invest-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-seedling"></i> Invertir desde tu Wallet</h2>
+                    <p>Elige dónde quieres invertir tu saldo disponible</p>
+                </div>
+                
+                <div class="invest-container">
+                    <div class="investment-card">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-piggy-bank"></i>
+                                Nueva Inversión
+                            </h3>
+                            <p>Después de analizar los escenarios, elige dónde quieres invertir tu saldo.</p>
+                        </div>
+                        <form method="post" action="{{ wallet_invest_url }}" class="investment-form">
                         {% csrf_token %}
                         <div class="investment-row">
                             <div class="form-group">
@@ -467,8 +498,8 @@
                             </div>
                         {% endfor %}
                     </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -545,9 +576,12 @@
             this.setupInputFormatting();
             this.setupHistoryFilters();
             this.setupComparisonAssetSelector();
+            this.setupAnalyticsTabs();
             this.allSimulaciones = []; // Almacenar todas las simulaciones para filtrado
+            this.allInversiones = []; // Almacenar todas las inversiones para filtrado
             this.currentResultados = null; // Almacenar resultados actuales para comparación
             this.currentComparisonAsset = 'CDT Bancario'; // Activo de comparación por defecto
+            this.currentAnalyticsType = 'simulaciones'; // Tipo de analítica actual
         }
 
         setupEventListeners() {
@@ -680,6 +714,24 @@
             }
         }
 
+        setupAnalyticsTabs() {
+            const tabButtons = document.querySelectorAll('.analytics-tab-btn');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tipo = btn.getAttribute('data-type');
+                    
+                    // Actualizar estado activo
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Actualizar tipo actual y recargar
+                    this.currentAnalyticsType = tipo;
+                    this.loadAnalytics(tipo);
+                });
+            });
+        }
+
         showSection(sectionName) {
             // Hide all sections
             document.querySelectorAll('.dashboard-section').forEach(section => {
@@ -693,9 +745,15 @@
             if (sectionName === 'history') {
                 this.loadHistory();
             } else if (sectionName === 'portfolio') {
-                this.loadPortfolio();
+                // Pequeño delay para asegurar que el DOM esté listo
+                setTimeout(() => {
+                    this.loadPortfolio();
+                }, 100);
             } else if (sectionName === 'analytics') {
-                this.loadAnalytics();
+                // Pequeño delay para asegurar que el DOM esté listo
+                setTimeout(() => {
+                    this.loadAnalytics(this.currentAnalyticsType || 'simulaciones');
+                }, 100);
             }
         }
         
@@ -710,8 +768,15 @@
                     filterButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
-                    // Aplicar filtro
-                    this.applyHistoryFilter(filter);
+                    // Aplicar filtro según el tipo actual
+                    const activeTab = document.querySelector('.history-tab-btn.active');
+                    const currentType = activeTab ? activeTab.getAttribute('data-type') : 'simulaciones';
+                    
+                    if (currentType === 'inversiones') {
+                        this.applyInversionesFilter(filter);
+                    } else {
+                        this.applyHistoryFilter(filter);
+                    }
                 });
             });
 
@@ -723,6 +788,32 @@
                     this.deleteAllSimulations();
                 });
             }
+
+            // Pestañas del historial
+            const historyTabButtons = document.querySelectorAll('.history-tab-btn');
+            historyTabButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tipo = btn.getAttribute('data-type');
+                    
+                    // Actualizar estado activo
+                    historyTabButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Mostrar/ocultar botón eliminar todas
+                    const deleteAllBtn = document.getElementById('delete-all-btn');
+                    if (deleteAllBtn) {
+                        deleteAllBtn.style.display = tipo === 'simulaciones' ? 'flex' : 'none';
+                    }
+                    
+                    // Cargar historial según el tipo
+                    if (tipo === 'inversiones') {
+                        this.loadInversionesHistory();
+                    } else {
+                        this.loadHistory();
+                    }
+                });
+            });
         }
 
         applyHistoryFilter(filterType) {
@@ -788,9 +879,6 @@
                             </p>
                         </div>
                         <div class="history-actions">
-                            <button class="btn-icon" onclick="window.dashboard.viewSimulation(${sim.id || 0})" title="Ver detalles">
-                                <i class="fas fa-eye"></i>
-                            </button>
                             <button class="btn-icon btn-icon-delete" onclick="window.dashboard.deleteSimulation(${sim.id || 0})" title="Eliminar simulación">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
@@ -967,6 +1055,207 @@
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
+
+        async loadInversionesHistory() {
+            const historyList = document.getElementById('history-list');
+            
+            if (!historyList) {
+                console.error('Elemento history-list no encontrado en el DOM');
+                return;
+            }
+            
+            historyList.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Cargando historial de inversiones...</p></div>';
+            
+            try {
+                const response = await fetch('/api/inversiones/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const inversiones = await response.json();
+                
+                if (!Array.isArray(inversiones)) {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+                
+                // Guardar todas las inversiones para filtrado
+                this.allInversiones = inversiones;
+                
+                if (inversiones.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No tienes inversiones realizadas aún</p>
+                            <p class="empty-hint">Realiza tu primera inversión desde el wallet para verla aquí</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Obtener filtro activo
+                const activeFilter = document.querySelector('.filter-btn.active')?.getAttribute('data-filter') || 'all';
+                this.applyInversionesFilter(activeFilter);
+                
+            } catch (error) {
+                console.error('Error cargando historial de inversiones:', error);
+                historyList.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar el historial de inversiones</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #94a3b8;">${error.message || 'Intenta recargar la página'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        applyInversionesFilter(filterType) {
+            if (!this.allInversiones || this.allInversiones.length === 0) {
+                return;
+            }
+
+            let filtered = [...this.allInversiones];
+
+            switch(filterType) {
+                case 'recent':
+                    // Últimas 10 inversiones
+                    filtered = filtered.slice(0, 10);
+                    break;
+                case 'large':
+                    // Ordenar por monto descendente y tomar las 10 mayores
+                    filtered = filtered
+                        .sort((a, b) => (b.monto_invertido || 0) - (a.monto_invertido || 0))
+                        .slice(0, 10);
+                    break;
+                case 'all':
+                default:
+                    // Mostrar todas (ya están ordenadas por fecha)
+                    break;
+            }
+
+            this.renderInversionesList(filtered);
+        }
+
+        renderInversionesList(inversiones) {
+            const historyList = document.getElementById('history-list');
+            if (!historyList) return;
+
+            if (inversiones.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay inversiones que coincidan con el filtro</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Mapeo de iconos
+            const iconMap = {
+                'cdt': 'fas fa-university',
+                'CDT Bancario': 'fas fa-university',
+                'sp500': 'fas fa-chart-line',
+                'S&P 500': 'fas fa-chart-line',
+                'btc': 'fab fa-bitcoin',
+                'Cripto (BTC)': 'fab fa-bitcoin',
+                'nft': 'fas fa-palette',
+                'NFTs': 'fas fa-palette'
+            };
+
+            historyList.innerHTML = inversiones.map(inv => {
+                const fecha = new Date(inv.fecha_inicio || Date.now());
+                const fechaFormateada = fecha.toLocaleDateString('es-CO', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const tipoActivo = inv.tipo_activo || inv.tipo_activo_codigo || '';
+                const icon = iconMap[tipoActivo] || iconMap[inv.tipo_activo_codigo] || 'fas fa-chart-bar';
+                const estadoBadge = inv.estado === 'activa' ? '<span class="status-badge active">Activa</span>' : 
+                                   inv.estado === 'finalizada' ? '<span class="status-badge finished">Finalizada</span>' :
+                                   '<span class="status-badge cancelled">Cancelada</span>';
+                
+                return `
+                    <div class="history-item" data-inv-id="${inv.id || 0}">
+                        <div class="history-icon">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div class="history-content">
+                            <h4>${tipoActivo || 'Inversión'}: ${this.formatCurrency(inv.monto_invertido || 0)}</h4>
+                            <p class="history-meta">
+                                <i class="fas fa-calendar"></i> ${fechaFormateada}
+                                ${inv.rentabilidad_porcentaje !== null && inv.rentabilidad_porcentaje !== undefined ? 
+                                    ` • <span class="${inv.rentabilidad_porcentaje >= 0 ? 'positive' : 'negative'}">${inv.rentabilidad_porcentaje >= 0 ? '+' : ''}${inv.rentabilidad_porcentaje.toFixed(2)}%</span>` : ''}
+                            </p>
+                        </div>
+                        <div class="history-actions">
+                            ${estadoBadge}
+                            <button class="btn-icon btn-icon-info" onclick="window.dashboard.viewInversionDetails(${inv.id || 0})" title="Ver detalles de inversión">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                            <button class="btn-icon btn-icon-delete" onclick="window.dashboard.deleteInversion(${inv.id || 0})" title="Eliminar inversión">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        viewInversionDetails(inversionId) {
+            const inversion = this.allInversiones?.find(inv => inv.id === inversionId);
+            if (!inversion) {
+                alert('No se encontró la inversión');
+                return;
+            }
+
+            const fechaInicio = inversion.fecha_inicio ? new Date(inversion.fecha_inicio).toLocaleDateString('es-CO', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : 'N/A';
+
+            const fechaVenc = inversion.fecha_vencimiento ? new Date(inversion.fecha_vencimiento).toLocaleDateString('es-CO', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }) : 'N/A';
+
+            const detalles = `
+                <div style="text-align: left; line-height: 1.8;">
+                    <h3 style="margin-bottom: 1rem; color: #667eea;">Detalles de la Inversión</h3>
+                    <p><strong>Tipo de Activo:</strong> ${inversion.tipo_activo || inversion.tipo_activo_codigo || 'N/A'}</p>
+                    <p><strong>Monto Invertido:</strong> ${this.formatCurrency(inversion.monto_invertido || 0)} COP</p>
+                    ${inversion.valor_esperado ? `<p><strong>Valor Esperado:</strong> ${this.formatCurrency(inversion.valor_esperado)} COP</p>` : ''}
+                    ${inversion.ganancia_esperada !== null && inversion.ganancia_esperada !== undefined ? 
+                        `<p><strong>Ganancia Esperada:</strong> <span class="${inversion.ganancia_esperada >= 0 ? 'positive' : 'negative'}">${this.formatCurrency(inversion.ganancia_esperada)} COP</span></p>` : ''}
+                    ${inversion.rentabilidad_porcentaje !== null && inversion.rentabilidad_porcentaje !== undefined ? 
+                        `<p><strong>Rentabilidad:</strong> <span class="${inversion.rentabilidad_porcentaje >= 0 ? 'positive' : 'negative'}">${inversion.rentabilidad_porcentaje >= 0 ? '+' : ''}${inversion.rentabilidad_porcentaje.toFixed(2)}%</span></p>` : ''}
+                    <p><strong>Plazo:</strong> ${inversion.meses || 0} meses</p>
+                    <p><strong>Estado:</strong> ${inversion.estado || 'N/A'}</p>
+                    <p><strong>Fecha de Inicio:</strong> ${fechaInicio}</p>
+                    ${fechaVenc !== 'N/A' ? `<p><strong>Fecha de Vencimiento:</strong> ${fechaVenc}</p>` : ''}
+                </div>
+            `;
+
+            alert(detalles.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()); // Versión simple sin HTML
+            // Alternativa: podrías crear un modal bonito aquí
+        }
+
+        async deleteInversion(inversionId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta inversión del historial? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            // Nota: Aquí necesitarías crear un endpoint DELETE para inversiones
+            // Por ahora, solo mostrar un mensaje
+            alert('Función de eliminación de inversiones no implementada aún. Contacta al administrador.');
+        }
         
         async loadPortfolio() {
             const portfolioTotal = document.getElementById('portfolio-total');
@@ -975,7 +1264,12 @@
             const investmentsList = document.getElementById('portfolio-investments-list');
             
             if (!portfolioTotal || !portfolioPerformance || !portfolioCount || !investmentsList) {
-                console.error('Elementos del portafolio no encontrados en el DOM');
+                console.error('Elementos del portafolio no encontrados en el DOM', {
+                    portfolioTotal: !!portfolioTotal,
+                    portfolioPerformance: !!portfolioPerformance,
+                    portfolioCount: !!portfolioCount,
+                    investmentsList: !!investmentsList
+                });
                 return;
             }
             
@@ -986,19 +1280,31 @@
             if (portfolioPerformance) portfolioPerformance.textContent = '...';
             
             try {
-                const response = await fetch('/api/portafolio/');
+                console.log('Cargando datos del portafolio...');
+                const response = await fetch('/api/portafolio/', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                console.log('Respuesta del servidor:', response.status, response.statusText);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('Error en respuesta HTTP:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
                 
                 const data = await response.json();
+                console.log('Datos del portafolio recibidos:', data);
                 
                 if (data.error) {
+                    console.error('Error en datos del portafolio:', data.error);
                     throw new Error(data.error);
                 }
-                
-                console.log('Datos del portafolio recibidos:', data);
                 
                 // Actualizar resumen
                 const saldoTotal = data.saldo_total || data.wallet_balance || 0;
@@ -1139,19 +1445,46 @@
                         <i class="fas fa-exclamation-triangle"></i>
                         <p>Error al cargar el portafolio</p>
                         <p style="font-size: 0.9rem; margin-top: 0.5rem; color: #94a3b8;">${error.message || 'Intenta recargar la página'}</p>
+                        <button onclick="window.dashboard.loadPortfolio()" class="btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-sync-alt"></i> Reintentar
+                        </button>
                     </div>
                 `;
             }
         }
         
-        async loadAnalytics() {
+        async loadAnalytics(tipo = 'simulaciones') {
             const totalSimulatedEl = document.getElementById('analytics-total-simulated');
             const avgSimulationEl = document.getElementById('analytics-avg-simulation');
             const timelineChartEl = document.getElementById('analytics-timeline-chart');
             const distributionChartEl = document.getElementById('analytics-distribution-chart');
             
+            // Actualizar títulos según el tipo
+            const timelineParentEl = timelineChartEl ? timelineChartEl.parentElement : null;
+            if (timelineParentEl) {
+                const timelineTitle = timelineParentEl.querySelector('h3');
+                if (timelineTitle) {
+                    timelineTitle.innerHTML = tipo === 'inversiones' 
+                        ? '<i class="fas fa-chart-line"></i> Evolución de Inversiones'
+                        : '<i class="fas fa-chart-line"></i> Evolución de Simulaciones';
+                }
+            }
+            
+            // Actualizar título de distribución
+            const distTitleEl = document.getElementById('distribution-title');
+            if (distTitleEl) {
+                distTitleEl.textContent = tipo === 'inversiones' ? 'por Activo' : 'por Monto Simulado';
+            }
+            
+            // Actualizar etiquetas de estadísticas
+            const statLabels = document.querySelectorAll('.analytics-stats .stat-card h4');
+            if (statLabels.length >= 2) {
+                statLabels[0].textContent = tipo === 'inversiones' ? 'Total Invertido' : 'Total Simulado';
+                statLabels[1].textContent = tipo === 'inversiones' ? 'Promedio por Inversión' : 'Promedio por Simulación';
+            }
+            
             try {
-                const response = await fetch('/api/analytics/');
+                const response = await fetch(`/api/analytics/?tipo=${tipo}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1163,12 +1496,21 @@
                     throw new Error(data.error);
                 }
                 
-                // Actualizar estadísticas
-                if (totalSimulatedEl) {
-                    totalSimulatedEl.textContent = this.formatCurrency(data.total_simulado || 0);
-                }
-                if (avgSimulationEl) {
-                    avgSimulationEl.textContent = this.formatCurrency(data.promedio_simulacion || 0);
+                // Actualizar estadísticas según el tipo
+                if (tipo === 'inversiones') {
+                    if (totalSimulatedEl) {
+                        totalSimulatedEl.textContent = this.formatCurrency(data.total_invertido || 0);
+                    }
+                    if (avgSimulationEl) {
+                        avgSimulationEl.textContent = this.formatCurrency(data.promedio_inversion || 0);
+                    }
+                } else {
+                    if (totalSimulatedEl) {
+                        totalSimulatedEl.textContent = this.formatCurrency(data.total_simulado || 0);
+                    }
+                    if (avgSimulationEl) {
+                        avgSimulationEl.textContent = this.formatCurrency(data.promedio_simulacion || 0);
+                    }
                 }
                 
                 // Destruir gráficos anteriores si existen
@@ -1181,30 +1523,47 @@
                 
                 // Convertir distribución de activos al formato correcto
                 let distribucion = {};
+                let timeline = null;
                 
-                // Priorizar distribución de inversiones, si no hay, usar distribución de simulaciones
-                if (data.distribucion_activos && Object.keys(data.distribucion_activos).length > 0) {
-                    // Hay inversiones, usar distribución por activo
-                    Object.keys(data.distribucion_activos).forEach(key => {
-                        const value = data.distribucion_activos[key];
-                        distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
-                    });
-                } else if (data.distribucion_simulaciones && Object.keys(data.distribucion_simulaciones).length > 0) {
-                    // No hay inversiones, usar distribución de simulaciones por rango
-                    Object.keys(data.distribucion_simulaciones).forEach(key => {
-                        const value = data.distribucion_simulaciones[key];
-                        distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
-                    });
+                if (tipo === 'inversiones') {
+                    // Manejar datos de inversiones
+                    timeline = data.inversiones_timeline || null;
+                    
+                    // Priorizar distribución de activos de inversiones
+                    if (data.distribucion_activos && Object.keys(data.distribucion_activos).length > 0) {
+                        Object.keys(data.distribucion_activos).forEach(key => {
+                            const value = data.distribucion_activos[key];
+                            distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
+                        });
+                    } else if (data.distribucion_rangos && Object.keys(data.distribucion_rangos).length > 0) {
+                        // Usar distribución por rangos si no hay por activos
+                        Object.keys(data.distribucion_rangos).forEach(key => {
+                            const value = data.distribucion_rangos[key];
+                            distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
+                        });
+                    }
+                } else {
+                    // Manejar datos de simulaciones
+                    timeline = data.simulaciones_timeline || null;
+                    
+                    // Para simulaciones, usar SOLO distribución de simulaciones (por rango de monto)
+                    if (data.distribucion_simulaciones && Object.keys(data.distribucion_simulaciones).length > 0) {
+                        Object.keys(data.distribucion_simulaciones).forEach(key => {
+                            const value = data.distribucion_simulaciones[key];
+                            distribucion[key] = typeof value === 'object' ? value.monto_total || value.cantidad : value;
+                        });
+                    }
                 }
                 
                 // Crear gráfico de timeline si hay datos
-                const hasTimeline = data.simulaciones_timeline && data.simulaciones_timeline.length > 0;
+                const hasTimeline = timeline && timeline.length > 0;
                 const hasDistribution = distribucion && Object.keys(distribucion).length > 0;
                 
                 if (hasTimeline || hasDistribution) {
                     this.createAnalyticsCharts(
-                        hasTimeline ? data.simulaciones_timeline : null, 
-                        hasDistribution ? distribucion : null
+                        hasTimeline ? timeline : null, 
+                        hasDistribution ? distribucion : null,
+                        tipo
                     );
                 } else {
                     // Mostrar estado vacío
@@ -1247,7 +1606,7 @@
             }
         }
         
-        createAnalyticsCharts(simulacionesTimeline, distribucionActivos) {
+        createAnalyticsCharts(simulacionesTimeline, distribucionActivos, tipo = 'simulaciones') {
             // Gráfico de línea temporal
             const timelineCtx = document.getElementById('analytics-timeline-chart');
             const timelineParent = timelineCtx ? timelineCtx.parentElement : null;
@@ -1262,14 +1621,15 @@
                             const date = new Date(s.fecha);
                             return date.toLocaleDateString('es-CO', { month: 'short', day: 'numeric' });
                         });
-                        const montos = simulacionesTimeline.map(s => s.monto);
+                        const montos = simulacionesTimeline.map(s => s.monto || s.monto_invertido);
+                        const labelText = tipo === 'inversiones' ? 'Monto Invertido' : 'Monto Simulado';
                         
                         this.charts.analyticsTimeline = new Chart(newCtx, {
                             type: 'line',
                             data: {
                                 labels: labels,
                                 datasets: [{
-                                    label: 'Monto Simulado',
+                                    label: labelText,
                                     data: montos,
                                     borderColor: 'rgb(102, 126, 234)',
                                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -1304,14 +1664,15 @@
                         const date = new Date(s.fecha);
                         return date.toLocaleDateString('es-CO', { month: 'short', day: 'numeric' });
                     });
-                    const montos = simulacionesTimeline.map(s => s.monto);
+                    const montos = simulacionesTimeline.map(s => s.monto || s.monto_invertido);
+                    const labelText = tipo === 'inversiones' ? 'Monto Invertido' : 'Monto Simulado';
                     
                     this.charts.analyticsTimeline = new Chart(timelineCtx, {
                         type: 'line',
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Monto Simulado',
+                                label: labelText,
                                 data: montos,
                                 borderColor: 'rgb(102, 126, 234)',
                                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -1353,15 +1714,22 @@
             const distParent = distCtx ? distCtx.parentElement : null;
             const distTitleEl = document.getElementById('distribution-title');
             
-            // Determinar si es distribución de inversiones o simulaciones
-            const isInversiones = distribucionActivos && Object.keys(distribucionActivos).some(key => 
-                ['CDT Bancario', 'S&P 500', 'Cripto (BTC)', 'NFTs'].includes(key)
-            );
+            // Determinar título según el tipo y las claves de distribución
+            let titleText = 'por Activo';
+            if (tipo === 'simulaciones') {
+                titleText = 'por Monto Simulado';
+            } else if (tipo === 'inversiones') {
+                // Determinar si es por activo o por rango
+                const isByAsset = distribucionActivos && Object.keys(distribucionActivos).some(key => 
+                    ['CDT Bancario', 'S&P 500', 'Cripto (BTC)', 'NFTs'].includes(key)
+                );
+                titleText = isByAsset ? 'por Activo' : 'por Rango de Monto';
+            }
             
             if (distribucionActivos && Object.keys(distribucionActivos).length > 0) {
                 // Actualizar título
                 if (distTitleEl) {
-                    distTitleEl.textContent = isInversiones ? 'por Activo' : 'por Monto Simulado';
+                    distTitleEl.textContent = titleText;
                 }
                 
                 // Restaurar el canvas si fue reemplazado por un mensaje vacío
@@ -1395,12 +1763,14 @@
                     'rgba(255, 205, 86, 0.8)'
                 ];
                 
+                        const datasetLabel = tipo === 'inversiones' ? 'Monto Invertido' : 'Monto Simulado';
+                
                 this.charts.analyticsDistribution = new Chart(currentDistCtx, {
                     type: 'doughnut',
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Cantidad de Inversiones',
+                            label: datasetLabel,
                             data: data,
                             backgroundColor: colors.slice(0, labels.length)
                         }]
@@ -1902,6 +2272,21 @@
     document.addEventListener('DOMContentLoaded', () => {
         window.dashboard = new Dashboard();
         const dashboard = window.dashboard;
+        
+        // Verificar si hay mensajes de éxito de inversión y recargar portafolio si es necesario
+        const messages = document.querySelectorAll('.messages-container .dashboard-alert.success, .messages-container .dashboard-alert.info');
+        messages.forEach(msg => {
+            const msgText = msg.textContent || '';
+            if (msgText.includes('Inversión') || msgText.includes('inversión')) {
+                // Si estamos en la sección de portafolio, recargar datos
+                setTimeout(() => {
+                    const portfolioSection = document.getElementById('portfolio-section');
+                    if (portfolioSection && portfolioSection.classList.contains('active')) {
+                        dashboard.loadPortfolio();
+                    }
+                }, 1000);
+            }
+        });
         
         // Agregar animaciones de entrada
         setTimeout(() => {

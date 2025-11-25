@@ -6,6 +6,7 @@ urlpatterns = [
     path("api/simulaciones/", views.historial_simulaciones, name="api_simulaciones"),
     path("api/simulaciones/<int:simulacion_id>/", views.eliminar_simulacion, name="api_eliminar_simulacion"),
     path("api/simulaciones/todas/", views.eliminar_todas_simulaciones, name="api_eliminar_todas_simulaciones"),
+    path("api/inversiones/", views.historial_inversiones, name="api_inversiones"),
     path("api/portafolio/", views.portafolio_api, name="api_portafolio"),
     path("api/analytics/", views.analytics_api, name="api_analytics"),
     path('top-up/', views.top_up_view, name='top_up'),

@@ -1883,3 +1883,187 @@ body {
     }
 }
 
+/* Pestañas de Analíticas e Historial */
+.analytics-type-tabs,
+.history-type-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.analytics-tab-btn,
+.history-tab-btn {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.analytics-tab-btn:hover,
+.history-tab-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.analytics-tab-btn.active,
+.history-tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.analytics-tab-btn i,
+.history-tab-btn i {
+    font-size: 1rem;
+}
+
+/* Ajustes para analytics-filters */
+#analytics-section .analytics-filters {
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#analytics-section .analytics-type-tabs {
+    width: 100%;
+}
+
+/* Botón de información en historial */
+.btn-icon-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.btn-icon-info:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: scale(1.05);
+}
+
+/* Badges de estado */
+.status-badge.finished {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.status-badge.cancelled {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge.active {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+/* Sección de Inversión */
+#invest-section {
+    padding: 2rem;
+}
+
+.invest-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.invest-container .investment-card {
+    width: 100%;
+}
+
+.invest-container .panel-header h3 {
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.invest-container .panel-header p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.investment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.investment-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.investment-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.option-chip {
+    background: rgba(102, 126, 234, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.option-chip strong {
+    display: block;
+    color: #667eea;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.option-chip span {
+    display: block;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.invest-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    #invest-section {
+        padding: 1rem;
+    }
+    
+    .invest-container {
+        padding: 1.5rem;
+    }
+    
+    .investment-row {
+        grid-template-columns: 1fr;
+    }
+}
+
