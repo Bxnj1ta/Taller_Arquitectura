@@ -93,7 +93,7 @@ class TestIntegracionCompleta(TestCase):
         self.assertIn("fuentes", metadata)
         self.assertEqual(metadata["fuentes"]["cdt"], "Mock BanRep")
         
-        print(f"✅ CDT: ${resultados['CDT Bancario']['esperado']:,.0f}")
-        print(f"✅ S&P 500: ${resultados['S&P 500']['esperado']:,.0f}")
+        print(f"✅ CDT: ${float(resultados['CDT Bancario']['esperado']):,.0f}")
+        print(f"✅ S&P 500: ${float(resultados['S&P 500']['esperado']):,.0f}")
         print(f"✅ Metadata: {metadata['fuentes']['cdt']}")
         print("✓ Flujo completo con MOCK PASADO")

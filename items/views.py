@@ -342,9 +342,9 @@ def _ejecutar_simulacion_legacy(monto, meses, activos):
     resultados = {}
     
     # Factores de crecimiento MÁXIMOS realistas (por año, no en 10 años)
-    # Estos se aplican proporcionalmente al tiempo
+    # CORRECCIÓN: Límites más realistas para CDT
     factores_maximos_anuales = {
-        "CDT Bancario": 1.12,     # 12% anual máximo (muy conservador para CDT)
+        "CDT Bancario": 1.15,     # 15% anual máximo 
         "S&P 500": 1.40,          # 40% anual máximo  
         "Cripto (BTC)": 2.0,      # 100% anual máximo
         "NFTs": 2.5               # 150% anual máximo
@@ -366,8 +366,14 @@ def _ejecutar_simulacion_legacy(monto, meses, activos):
         
         # Calcular factores proporcionales al tiempo
         años = meses / 12.0
-        factor_max_ajustado = factores_maximos_anuales.get(nombre, 1.5) ** años
-        factor_min_ajustado = factores_minimos_anuales.get(nombre, 1.0) ** años
+        
+        # CORRECCIÓN: Para CDT, usar límites más conservadores
+        if nombre == "CDT Bancario":
+            factor_max_ajustado = 1 + (factores_maximos_anuales.get(nombre, 1.15) - 1) * años
+            factor_min_ajustado = 1 + (factores_minimos_anuales.get(nombre, 1.08) - 1) * años
+        else:
+            factor_max_ajustado = factores_maximos_anuales.get(nombre, 1.5) ** años
+            factor_min_ajustado = factores_minimos_anuales.get(nombre, 1.0) ** años
         
         # 1. ESCENARIO ESPERADO (con límites estrictos proporcionales al tiempo)
         esperado = monto * ((1 + retorno) ** meses)
