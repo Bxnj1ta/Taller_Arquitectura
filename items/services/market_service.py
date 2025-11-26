@@ -398,7 +398,7 @@ def obtener_parametros_activos():
             }
         }
         
-        print("✅ Parámetros de activos calculados exitosamente")
+        logger.info("Parametros de activos calculados exitosamente")
         return activos
         
     except Exception as e:

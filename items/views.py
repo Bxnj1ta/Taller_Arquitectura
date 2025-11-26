@@ -23,7 +23,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import F
 from .forms import TopUpForm, WithdrawForm
-from .models import Wallet
+from .models import Wallet, Inversion
 
 
 User = get_user_model()
@@ -244,14 +244,14 @@ def simular(request):
 
         # DEBUG TEMPORAL - VER QUÉ ESTÁ PASANDO
         from .services.market_service import MarketDataService
-        print("🔍 INICIANDO DEBUG...")
+        logger.debug("INICIANDO DEBUG...")
         #MarketDataService.debug_datos_apis()
         
         # Obtener parámetros de activos
         activos = obtener_parametros_activos()
         
         # DEBUG: Mostrar qué parámetros se van a usar
-        print("\n🎯 PARÁMETROS QUE SE USARÁN EN LA SIMULACIÓN:")
+        logger.debug("\nPARAMETROS QUE SE USARAN EN LA SIMULACION:")
         for nombre, params in activos.items():
             retorno = params["retorno"]
             volatilidad = params["volatilidad"]
@@ -278,7 +278,7 @@ def simular(request):
             )
 
         # ===== OBTENER PARÁMETROS DE MERCADO =====
-        logger.info(f"🔄 Usuario {request.user.email} simulando: ${monto:,.0f} por {meses} meses")
+        logger.info(f"Usuario {request.user.email} simulando: ${monto:,.0f} por {meses} meses")
         
         # Ejecutar simulación
         resultados = _ejecutar_simulacion(monto, meses, activos)
@@ -341,43 +341,53 @@ def _ejecutar_simulacion_legacy(monto, meses, activos):
     """
     resultados = {}
     
-    # Factores de crecimiento MÁXIMOS realistas (en 10 años)
-    factores_maximos = {
-        "CDT Bancario": 2.5,      # 150% en 10 años
-        "S&P 500": 4.0,           # 300% en 10 años  
-        "Cripto (BTC)": 10.0,     # 900% en 10 años
-        "NFTs": 15.0              # 1400% en 10 años
+    # Factores de crecimiento MÁXIMOS realistas (por año, no en 10 años)
+    # Estos se aplican proporcionalmente al tiempo
+    factores_maximos_anuales = {
+        "CDT Bancario": 1.12,     # 12% anual máximo (muy conservador para CDT)
+        "S&P 500": 1.40,          # 40% anual máximo  
+        "Cripto (BTC)": 2.0,      # 100% anual máximo
+        "NFTs": 2.5               # 150% anual máximo
     }
     
-    # Factores de crecimiento MÍNIMOS
-    factores_minimos = {
-        "CDT Bancario": 1.2,      # 20% en 10 años
-        "S&P 500": 0.5,           # -50% en 10 años
-        "Cripto (BTC)": 0.1,      # -90% en 10 años
-        "NFTs": 0.01              # -99% en 10 años
+    # Factores de crecimiento MÍNIMOS (por año)
+    factores_minimos_anuales = {
+        "CDT Bancario": 1.08,     # 8% anual mínimo (realista para CDT)
+        "S&P 500": 0.95,          # -5% anual mínimo (perdida moderada)
+        "Cripto (BTC)": 0.8,      # -20% anual mínimo
+        "NFTs": 0.5               # -50% anual mínimo
     }
     
     for nombre, params in activos.items():
         retorno = params["retorno"]
         volatilidad = params["volatilidad"]
         
-        print(f"🎯 Simulando {nombre}: retorno={retorno:.4f} mensual, vol={volatilidad:.4f}")
+        logger.debug(f"Simulando {nombre}: retorno={retorno:.4f} mensual, vol={volatilidad:.4f}")
         
-        # 1. ESCENARIO ESPERADO (con límites estrictos)
+        # Calcular factores proporcionales al tiempo
+        años = meses / 12.0
+        factor_max_ajustado = factores_maximos_anuales.get(nombre, 1.5) ** años
+        factor_min_ajustado = factores_minimos_anuales.get(nombre, 1.0) ** años
+        
+        # 1. ESCENARIO ESPERADO (con límites estrictos proporcionales al tiempo)
         esperado = monto * ((1 + retorno) ** meses)
-        esperado = min(esperado, monto * factores_maximos[nombre])
-        esperado = max(esperado, monto * factores_minimos[nombre])
+        esperado = min(esperado, monto * factor_max_ajustado)
+        esperado = max(esperado, monto * factor_min_ajustado)
         
         # 2. MEJOR CASO (no extremo)
         mejor_retorno = retorno + (volatilidad * 0.5)  # Solo media desviación estándar
         mejor = monto * ((1 + mejor_retorno) ** meses)
-        mejor = min(mejor, monto * factores_maximos[nombre] * 1.2)  # Máximo 20% extra
+        # Para CDT, el mejor caso no debe exceder mucho el límite máximo
+        if nombre == "CDT Bancario":
+            mejor = min(mejor, monto * factor_max_ajustado * 1.05)  # Máximo 5% extra para CDT
+        else:
+            mejor = min(mejor, monto * factor_max_ajustado * 1.2)  # Máximo 20% extra para otros
         
         # 3. PEOR CASO (no catastrófico)
         peor_retorno = retorno - (volatilidad * 0.5)  # Solo media desviación estándar
         peor_retorno = max(peor_retorno, -0.2)  # Máximo -20% mensual
         peor = monto * ((1 + peor_retorno) ** meses)
-        peor = max(peor, monto * factores_minimos[nombre])
+        peor = max(peor, monto * factor_min_ajustado)
         
         # Cálculos
         ganancia = esperado - monto
@@ -394,7 +404,7 @@ def _ejecutar_simulacion_legacy(monto, meses, activos):
             "volatilidad_mensual": round(volatilidad * 100, 4)
         }
         
-        print(f"   ✅ {nombre}: ${monto:,.0f} → ${esperado:,.0f} (x{esperado/monto:.1f})")
+        logger.debug(f"   {nombre}: ${monto:,.0f} -> ${esperado:,.0f} (x{esperado/monto:.1f})")
     
     return resultados
 
@@ -411,6 +421,292 @@ def historial_simulaciones(request):
     except Exception as e:
         logger.error(f"Error obteniendo historial para {request.user.email}: {e}")
         return JsonResponse({"error": "Error al obtener historial"}, status=500)
+
+
+@login_required
+def historial_inversiones(request):
+    """Obtiene el historial de inversiones del usuario (todas, no solo activas)."""
+    try:
+        inversiones = Inversion.objects.filter(
+            user=request.user
+        ).order_by("-fecha_inicio")
+        
+        inversiones_data = []
+        for inv in inversiones:
+            # Asegurar que la fecha de vencimiento se calcule si no existe
+            if not inv.fecha_vencimiento and inv.fecha_inicio and inv.meses:
+                inv.fecha_vencimiento = inv.calcular_fecha_vencimiento()
+                inv.save(update_fields=['fecha_vencimiento'])
+            
+            inversiones_data.append({
+                'id': inv.id,
+                'tipo_activo': inv.get_tipo_activo_display(),
+                'tipo_activo_codigo': inv.tipo_activo,
+                'monto_invertido': float(inv.monto_invertido),
+                'valor_esperado': float(inv.valor_esperado) if inv.valor_esperado else None,
+                'ganancia_esperada': float(inv.ganancia_esperada) if inv.ganancia_esperada else None,
+                'rentabilidad_porcentaje': float(inv.rentabilidad_porcentaje) if inv.rentabilidad_porcentaje else None,
+                'meses': inv.meses,
+                'estado': inv.estado,
+                'fecha_inicio': inv.fecha_inicio.isoformat() if inv.fecha_inicio else None,
+                'fecha_vencimiento': inv.fecha_vencimiento.isoformat() if inv.fecha_vencimiento else None,
+                'fecha_finalizacion': inv.fecha_finalizacion.isoformat() if inv.fecha_finalizacion else None,
+            })
+        
+        return JsonResponse(inversiones_data, safe=False)
+    except Exception as e:
+        logger.error(f"Error obteniendo historial de inversiones para {request.user.email}: {e}", exc_info=True)
+        return JsonResponse({"error": "Error al obtener historial de inversiones"}, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def eliminar_simulacion(request, simulacion_id):
+    """Elimina una simulación específica del usuario."""
+    try:
+        simulacion = get_object_or_404(Simulacion, id=simulacion_id, user=request.user)
+        simulacion.delete()
+        logger.info(f"Simulación {simulacion_id} eliminada por {request.user.email}")
+        return JsonResponse({"success": True, "message": "Simulación eliminada correctamente"})
+    except Exception as e:
+        logger.error(f"Error eliminando simulación {simulacion_id} para {request.user.email}: {e}")
+        return JsonResponse({"error": "Error al eliminar la simulación"}, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def eliminar_todas_simulaciones(request):
+    """Elimina todas las simulaciones del usuario."""
+    try:
+        simulaciones = Simulacion.objects.filter(user=request.user)
+        count = simulaciones.count()
+        simulaciones.delete()
+        logger.info(f"{count} simulaciones eliminadas por {request.user.email}")
+        return JsonResponse({
+            "success": True, 
+            "message": f"{count} simulaciones eliminadas correctamente",
+            "count": count
+        })
+    except Exception as e:
+        logger.error(f"Error eliminando todas las simulaciones para {request.user.email}: {e}")
+        return JsonResponse({"error": "Error al eliminar las simulaciones"}, status=500)
+
+
+@login_required
+def portafolio_api(request):
+    """API para obtener datos del portafolio del usuario."""
+    try:
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        inversiones = Inversion.objects.filter(
+            user=request.user,
+            estado='activa'
+        ).order_by('-fecha_inicio')
+        
+        logger.info(f"Obteniendo portafolio para {request.user.email}: {inversiones.count()} inversiones activas")
+        
+        inversiones_data = []
+        total_invertido = Decimal('0')
+        total_esperado = Decimal('0')
+        
+        for inv in inversiones:
+            total_invertido += inv.monto_invertido
+            if inv.valor_esperado:
+                total_esperado += inv.valor_esperado
+            
+            # Asegurar que la fecha de vencimiento se calcule si no existe
+            if not inv.fecha_vencimiento and inv.fecha_inicio and inv.meses:
+                inv.fecha_vencimiento = inv.calcular_fecha_vencimiento()
+                inv.save(update_fields=['fecha_vencimiento'])
+            
+            inversiones_data.append({
+                'id': inv.id,
+                'tipo_activo': inv.get_tipo_activo_display(),
+                'tipo_activo_codigo': inv.tipo_activo,
+                'monto_invertido': float(inv.monto_invertido),
+                'valor_esperado': float(inv.valor_esperado) if inv.valor_esperado else None,
+                'ganancia_esperada': float(inv.ganancia_esperada) if inv.ganancia_esperada else None,
+                'rentabilidad_porcentaje': float(inv.rentabilidad_porcentaje) if inv.rentabilidad_porcentaje else None,
+                'meses': inv.meses,
+                'fecha_inicio': inv.fecha_inicio.isoformat() if inv.fecha_inicio else None,
+                'fecha_vencimiento': inv.fecha_vencimiento.isoformat() if inv.fecha_vencimiento else None,
+            })
+        
+        # Calcular rendimiento convirtiendo todo a float para evitar errores de tipo
+        total_invertido_float = float(total_invertido)
+        total_esperado_float = float(total_esperado)
+        
+        rendimiento_total = total_esperado_float - total_invertido_float if total_esperado_float > 0 else 0.0
+        rendimiento_porcentaje = 0.0
+        if total_invertido_float > 0:
+            rendimiento_porcentaje = (rendimiento_total / total_invertido_float) * 100.0
+        
+        response_data = {
+            'saldo_total': float(wallet.balance),
+            'total_invertido': float(total_invertido),
+            'total_esperado': float(total_esperado),
+            'rendimiento_total': rendimiento_total,
+            'rendimiento_porcentaje': rendimiento_porcentaje,
+            'inversiones_activas': len(inversiones),
+            'inversiones': inversiones_data
+        }
+        
+        logger.info(f"Portafolio para {request.user.email}: {response_data['inversiones_activas']} inversiones, saldo: {response_data['saldo_total']}")
+        
+        return JsonResponse(response_data)
+    except Exception as e:
+        logger.error(f"Error obteniendo portafolio para {request.user.email}: {e}", exc_info=True)
+        return JsonResponse({"error": f"Error al obtener portafolio: {str(e)}"}, status=500)
+
+
+@login_required
+def analytics_api(request):
+    """API para obtener datos de analíticas del usuario."""
+    try:
+        # Obtener tipo de analítica solicitada (simulaciones o inversiones)
+        tipo_analitica = request.GET.get('tipo', 'simulaciones')  # Por defecto simulaciones
+        
+        simulaciones = Simulacion.objects.filter(
+            user=request.user
+        ).order_by('-creado')
+        
+        inversiones = Inversion.objects.filter(
+            user=request.user
+        ).order_by('-fecha_inicio')
+        
+        # Si se solicita analítica de inversiones
+        if tipo_analitica == 'inversiones':
+            # Estadísticas de inversiones
+            total_invertido = sum(inv.monto_invertido for inv in inversiones)
+            total_esperado = sum(inv.valor_esperado for inv in inversiones if inv.valor_esperado)
+            promedio_inversion = total_invertido / len(inversiones) if inversiones else 0
+            
+            # Distribución por activo (de inversiones)
+            distribucion_activos = {}
+            for inv in inversiones:
+                tipo_activo = inv.get_tipo_activo_display()
+                if tipo_activo not in distribucion_activos:
+                    distribucion_activos[tipo_activo] = {
+                        'cantidad': 0,
+                        'monto_total': Decimal('0')
+                    }
+                distribucion_activos[tipo_activo]['cantidad'] += 1
+                distribucion_activos[tipo_activo]['monto_total'] += inv.monto_invertido
+            
+            # Timeline de inversiones
+            inversiones_timeline = [{
+                'fecha': inv.fecha_inicio.isoformat(),
+                'monto': float(inv.monto_invertido),
+                'meses': inv.meses,
+                'tipo_activo': inv.get_tipo_activo_display()
+            } for inv in inversiones[:50]]  # Últimas 50
+            
+            # Si no hay distribución por activos (aunque haya inversiones), crear distribución por rango como alternativa
+            distribucion_rangos = None
+            if not distribucion_activos:
+                rangos = {
+                    'Hasta $1M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                    '$1M - $5M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                    '$5M - $10M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                    'Más de $10M': {'cantidad': 0, 'monto_total': Decimal('0')}
+                }
+                
+                for inv in inversiones:
+                    monto = float(inv.monto_invertido)
+                    if monto < 1000000:
+                        rango = 'Hasta $1M'
+                    elif monto < 5000000:
+                        rango = '$1M - $5M'
+                    elif monto < 10000000:
+                        rango = '$5M - $10M'
+                    else:
+                        rango = 'Más de $10M'
+                    
+                    rangos[rango]['cantidad'] += 1
+                    rangos[rango]['monto_total'] += Decimal(str(monto))
+                
+                distribucion_rangos = {
+                    k: {
+                        'cantidad': v['cantidad'],
+                        'monto_total': float(v['monto_total'])
+                    }
+                    for k, v in rangos.items() if v['cantidad'] > 0
+                }
+            
+            return JsonResponse({
+                'tipo': 'inversiones',
+                'total_invertido': float(total_invertido),
+                'total_esperado': float(total_esperado),
+                'promedio_inversion': float(promedio_inversion),
+                'distribucion_activos': {
+                    k: {
+                        'cantidad': v['cantidad'],
+                        'monto_total': float(v['monto_total'])
+                    }
+                    for k, v in distribucion_activos.items()
+                } if distribucion_activos else {},
+                'distribucion_rangos': distribucion_rangos,
+                'inversiones_timeline': inversiones_timeline,
+                'total_inversiones': len(inversiones)
+            })
+        
+        # Analítica de simulaciones (comportamiento por defecto)
+        # Estadísticas de simulaciones
+        total_simulado = sum(sim.monto for sim in simulaciones)
+        promedio_simulacion = total_simulado / len(simulaciones) if simulaciones else 0
+        
+        # Distribución por rango de monto simulado (SIEMPRE para simulaciones)
+        distribucion_simulaciones = None
+        if simulaciones:
+            # Distribución por rango de monto simulado
+            rangos = {
+                'Hasta $1M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                '$1M - $5M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                '$5M - $10M': {'cantidad': 0, 'monto_total': Decimal('0')},
+                'Más de $10M': {'cantidad': 0, 'monto_total': Decimal('0')}
+            }
+            
+            for sim in simulaciones:
+                monto = sim.monto
+                if monto < 1000000:
+                    rango = 'Hasta $1M'
+                elif monto < 5000000:
+                    rango = '$1M - $5M'
+                elif monto < 10000000:
+                    rango = '$5M - $10M'
+                else:
+                    rango = 'Más de $10M'
+                
+                rangos[rango]['cantidad'] += 1
+                rangos[rango]['monto_total'] += Decimal(str(monto))
+            
+            # Solo incluir rangos que tengan simulaciones
+            distribucion_simulaciones = {
+                k: {
+                    'cantidad': v['cantidad'],
+                    'monto_total': float(v['monto_total'])
+                }
+                for k, v in rangos.items() if v['cantidad'] > 0
+            }
+        
+        # Datos para gráficos
+        simulaciones_timeline = [{
+            'fecha': sim.creado.isoformat(),
+            'monto': sim.monto,
+            'meses': sim.meses
+        } for sim in simulaciones[:50]]  # Últimas 50
+        
+        return JsonResponse({
+            'tipo': 'simulaciones',
+            'total_simulado': float(total_simulado),
+            'promedio_simulacion': float(promedio_simulacion),
+            'distribucion_simulaciones': distribucion_simulaciones,  # Distribución por rango de monto
+            'simulaciones_timeline': simulaciones_timeline,
+            'total_simulaciones': len(simulaciones),
+            'total_inversiones': len(inversiones)
+        })
+    except Exception as e:
+        logger.error(f"Error obteniendo analíticas para {request.user.email}: {e}", exc_info=True)
+        return JsonResponse({"error": "Error al obtener analíticas"}, status=500)
 
 
 @login_required
@@ -490,21 +786,29 @@ def top_up_view(request):
             amount = form.cleaned_data['amount']
             try:
                 with transaction.atomic():
-                    wallet_locked = Wallet.objects.select_for_update().get(pk=wallet.pk)
-                    wallet_locked.balance = F('balance') + amount
-                    wallet_locked.save()
+                    # Actualizar balance usando F() para evitar race conditions
+                    Wallet.objects.filter(pk=wallet.pk).update(
+                        balance=F('balance') + amount
+                    )
+                    # Refrescar el wallet para obtener el nuevo balance
+                    wallet.refresh_from_db()
+                
                 payment_receipt = {
                     "reference": f"INV-{datetime.now().strftime('%Y%m%d%H%M%S')}",
                     "holder": form.cleaned_data["full_name"],
                     "amount": amount,
                     "masked_card": f"**** **** **** {form.cleaned_data['card_number'][-4:]}",
                 }
-                messages.success(request, f"Se han agregado ${amount:,.2f} COP a tu wallet.")
+                messages.success(request, f"Se han agregado ${amount:,.2f} COP a tu wallet. Tu nuevo saldo es ${wallet.balance:,.2f} COP.")
                 return redirect('simular')
             except Exception as e:
+                logger.error(f"Error actualizando wallet para {user.email}: {e}", exc_info=True)
                 messages.error(request, f"Error al actualizar el wallet: {e}")
     else:
         form = TopUpForm()
+
+    # Refrescar wallet antes de mostrar (por si acaso)
+    wallet.refresh_from_db()
 
     context = {
         'form': form,
@@ -584,6 +888,19 @@ def wallet_invest_view(request):
             wallet_locked.balance = wallet_locked.balance - amount + valor_esperado
             wallet_locked.save()
             nuevo_saldo = wallet_locked.balance
+            
+            # Crear registro de inversión
+            Inversion.objects.create(
+                user=request.user,
+                wallet=wallet_locked,
+                tipo_activo=asset_choice,
+                monto_invertido=amount,
+                meses=months,
+                valor_esperado=valor_esperado,
+                ganancia_esperada=ganancia,
+                rentabilidad_porcentaje=Decimal(str(resultado_activo.get("ganancia_porcentaje", 0))),
+                estado='activa'
+            )
     except Exception as exc:
         logger.error("Error actualizando wallet tras inversión: %s", exc, exc_info=True)
         messages.error(request, "No pudimos actualizar tu wallet. Intenta nuevamente.")
